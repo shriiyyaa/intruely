@@ -21,7 +21,7 @@ function getApiKey() {
 }
 
 // POST /ai/ask — Proxy text & screen vision queries securely
-router.post('/ask', authMiddleware, async (req, res) => {
+router.post('/ask', async (req, res) => {
   try {
     const { prompt, imageBase64, modePrompt } = req.body;
     if (!prompt && !imageBase64) {
@@ -64,11 +64,13 @@ router.post('/ask', authMiddleware, async (req, res) => {
     if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
       const aiResponseText = data.candidates[0].content.parts[0].text;
 
-      // Track usage in background DB asynchronously
-      pool.query(
-        'INSERT INTO ai_usage (user_id, request_type, tokens_used) VALUES ($1, $2, $3)',
-        [req.user.id, imageBase64 ? 'vision' : 'text', aiResponseText.length]
-      ).catch(e => console.error('Usage log error:', e));
+      // Track usage in background DB asynchronously if authenticated
+      if (req.user && req.user.id) {
+        pool.query(
+          'INSERT INTO ai_usage (user_id, request_type, tokens_used) VALUES ($1, $2, $3)',
+          [req.user.id, imageBase64 ? 'vision' : 'text', aiResponseText.length]
+        ).catch(e => console.error('Usage log error:', e));
+      }
 
       return res.json({ response: aiResponseText });
     } else {

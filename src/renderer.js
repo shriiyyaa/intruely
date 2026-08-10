@@ -113,11 +113,11 @@ function renderPaneContent(pane) {
         <div class="setting-info">
           <div class="setting-icon">🔑</div>
           <div>
-            <div class="setting-title">Google Gemini API Key (Free)</div>
-            <div class="setting-desc">Enter your free key for unlimited instant answers</div>
+            <div class="setting-title">Custom Gemini API Key (Optional)</div>
+            <div class="setting-desc">Render Cloud Backend active! Leave empty to use free backend, or enter your key for private BYOK.</div>
           </div>
         </div>
-        <input type="password" id="geminiKeyField" class="dock-input" style="max-width:240px;" value="${apiKey}" placeholder="AIzaSy..." onchange="saveApiKey(this.value)" />
+        <input type="password" id="geminiKeyField" class="dock-input" style="max-width:240px;" value="${apiKey}" placeholder="Optional custom key..." onchange="saveApiKey(this.value)" />
       </div>
 
       <div style="margin-top:24px; font-weight:700; font-size:14px; margin-bottom:12px;">Audio Settings</div>
