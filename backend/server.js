@@ -71,18 +71,19 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Server Initialization
-app.listen(PORT, () => {
-  console.log(`\n🚀 Intruely Server listening on port ${PORT}`);
-  console.log(`💚 Health Check: http://localhost:${PORT}/health\n`);
+// Server Initialization — skip in test environment (Supertest binds its own port)
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Intruely Server listening on port ${PORT}`);
+    console.log(`💚 Health Check: http://localhost:${PORT}/health\n`);
 
-  if (process.env.DATABASE_URL) {
-    initDB().catch(err => console.warn('⚠️ Database connection warning:', err.message));
-  } else {
-    console.log('ℹ️ Operating in Stateless AI Proxy mode (DATABASE_URL not set)');
-  }
-});
-
-
+    if (process.env.DATABASE_URL) {
+      initDB().catch(err => console.warn('⚠️ Database connection warning:', err.message));
+    } else {
+      console.log('ℹ️ Operating in Stateless AI Proxy mode (DATABASE_URL not set)');
+    }
+  });
+}
 
 module.exports = app;
+

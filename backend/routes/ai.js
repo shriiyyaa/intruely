@@ -4,18 +4,17 @@ const { pool } = require('../db');
 const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 
-// Primary & Backup API Keys for Gemini
-const GEMINI_API_KEYS = [
-  process.env.GEMINI_API_KEY,
-  process.env.GEMINI_API_KEY_PRIMARY,
-  process.env.GEMINI_API_KEY_BACKUP,
-  process.env.GEMINI_API_KEY_BACKUP2
-].filter(Boolean);
-
+// Keys are read lazily at request time so env changes (e.g. in tests) are picked up
 let keyIndex = 0;
 function getApiKey() {
-  if (GEMINI_API_KEYS.length === 0) return null;
-  const key = GEMINI_API_KEYS[keyIndex % GEMINI_API_KEYS.length];
+  const keys = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_PRIMARY,
+    process.env.GEMINI_API_KEY_BACKUP,
+    process.env.GEMINI_API_KEY_BACKUP2
+  ].filter(Boolean);
+  if (keys.length === 0) return null;
+  const key = keys[keyIndex % keys.length];
   keyIndex++;
   return key;
 }
