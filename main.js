@@ -85,6 +85,54 @@ app.whenReady().then(() => {
     }
   });
 
+  // Window Position Shortcuts (Matching Cluely Keybinds)
+  // Ctrl + Up : Move window position up
+  globalShortcut.register('CommandOrControl+Up', () => {
+    if (mainWindow) {
+      const [x, y] = mainWindow.getPosition();
+      mainWindow.setPosition(x, Math.max(0, y - 50));
+    }
+  });
+
+  // Ctrl + Down : Move window position down
+  globalShortcut.register('CommandOrControl+Down', () => {
+    if (mainWindow) {
+      const [x, y] = mainWindow.getPosition();
+      mainWindow.setPosition(x, y + 50);
+    }
+  });
+
+  // Ctrl + Left : Move window position left
+  globalShortcut.register('CommandOrControl+Left', () => {
+    if (mainWindow) {
+      const [x, y] = mainWindow.getPosition();
+      mainWindow.setPosition(Math.max(0, x - 50), y);
+    }
+  });
+
+  // Ctrl + Right : Move window position right
+  globalShortcut.register('CommandOrControl+Right', () => {
+    if (mainWindow) {
+      const [x, y] = mainWindow.getPosition();
+      mainWindow.setPosition(x + 50, y);
+    }
+  });
+
+  // Scroll Response Window Shortcuts
+  // Ctrl + Shift + Up : Scroll response window up
+  globalShortcut.register('CommandOrControl+Shift+Up', () => {
+    if (mainWindow) {
+      mainWindow.webContents.send('scroll-window', -150);
+    }
+  });
+
+  // Ctrl + Shift + Down : Scroll response window down
+  globalShortcut.register('CommandOrControl+Shift+Down', () => {
+    if (mainWindow) {
+      mainWindow.webContents.send('scroll-window', 150);
+    }
+  });
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

@@ -287,6 +287,12 @@ dockPromptInput.addEventListener('keydown', async (e) => {
 
 dockSnapBtn.addEventListener('click', triggerScreenSnap);
 window.electronAPI.onTriggerScreenCapture(triggerScreenSnap);
+window.electronAPI.onScrollWindow((deltaY) => {
+  const container = document.getElementById('homePane') || document.getElementById('aiResponseFeed');
+  if (container) {
+    container.scrollBy({ top: deltaY, behavior: 'smooth' });
+  }
+});
 
 async function triggerScreenSnap() {
   const aiCard = appendResponseCard('Intruely Vision', 'Analyzing screen snippet...', '#a855f7');

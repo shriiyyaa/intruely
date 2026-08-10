@@ -5,5 +5,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   toggleStealth: (enable) => ipcRenderer.invoke('toggle-stealth', enable),
   minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
   closeWindow: () => ipcRenderer.invoke('close-window'),
-  onTriggerScreenCapture: (callback) => ipcRenderer.on('trigger-screen-capture', () => callback())
+  onTriggerScreenCapture: (callback) => ipcRenderer.on('trigger-screen-capture', () => callback()),
+  onScrollWindow: (callback) => ipcRenderer.on('scroll-window', (event, deltaY) => callback(deltaY))
 });
