@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intruely AI</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="intruely-window">
+    <!-- Top Nav Header -->
+    <div class="top-header">
+      <div class="nav-left">
+        <span class="nav-arrow" id="backBtn">←</span>
+        <span class="nav-arrow" id="forwardBtn">→</span>
+        <span class="app-title" id="homeTitleBtn">Intruely <span style="font-size:10px; color:#22c55e; opacity:0.8;">FREE</span></span>
+        <div class="detectable-pill">
+          <span id="stealthLabel">Detectable</span>
+          <div class="toggle-switch off" id="stealthToggle">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="search-omnibar">
+        <span style="opacity: 0.5;">🔍</span>
+        <input type="text" placeholder="Search or ask anything..." id="topSearchInput" />
+      </div>
+
+      <div style="display:flex; align-items:center;">
+        <div class="user-profile-btn" id="profileBtn">S</div>
+        <div class="window-ops">
+          <button class="win-btn" id="minimizeBtn">─</button>
+          <button class="win-btn" id="closeBtn">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Dropdown -->
+    <div class="profile-dropdown" id="profileDropdown">
+      <div class="dropdown-header">
+        <div class="dropdown-name" id="userNameLabel">Shriya Nayyar</div>
+        <div class="dropdown-email" id="userEmailLabel">snayyar526@gmail.com</div>
+      </div>
+      <div class="dropdown-item" id="manageModesMenuItem">📂 Manage Modes</div>
+      <div class="dropdown-item" id="settingsMenuItem">⚙️ Settings</div>
+    </div>
+
+    <!-- Main Content Body -->
+    <div class="app-body">
+      
+      <!-- Home Sessions Feed View -->
+      <div class="home-pane" id="homePane">
+        <a href="#" class="meeting-header-link" id="linkCalendarBtn">Link your calendar to get notifications for upcoming meetings.</a>
+        
+        <div style="font-size: 11px; color: #9da3ae; margin-bottom: 12px; font-weight: 600;">PREVIOUS SESSIONS & RECAPS</div>
+
+        <div id="sessionsList">
+          <div class="session-row">
+            <div>
+              <div style="font-size: 14px; font-weight: 600;" id="activeModeDisplayTitle">Costing Engineer Interview Prep</div>
+              <div style="font-size: 11px; color: #9da3ae;">Real-time context mode active</div>
+            </div>
+            <div style="font-size: 12px; color: #9da3ae;">2:00 | 3:54pm</div>
+          </div>
+        </div>
+
+        <div id="aiResponseFeed" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+          <!-- Realtime AI cards rendered here -->
+        </div>
+      </div>
+
+      <!-- Settings & Modes Overlay Screen (Matches Image 1, 2, 3, 5) -->
+      <div class="fullview-overlay" id="fullviewOverlay">
+        <div class="sidebar-nav">
+          <div class="nav-group">
+            <div class="nav-item active" data-pane="general">⚙️ General</div>
+            <div class="nav-item" data-pane="modes">📂 Manage Modes</div>
+            <div class="nav-item" data-pane="calendar">📅 Calendar</div>
+            <div class="nav-item" data-pane="keybinds">⌨️ Keybinds</div>
+            <div class="nav-item" data-pane="profile">👤 Profile</div>
+            <div class="nav-item" data-pane="language">🌐 Language</div>
+            <div class="nav-item" data-pane="billing">💳 Billing (Free)</div>
+          </div>
+          <div class="nav-group">
+            <div class="nav-group-title">Support</div>
+            <div class="nav-item">📄 Release Notes</div>
+            <div class="nav-item">❓ Help Center</div>
+            <div class="nav-item" id="quitAppBtn">🚪 Quit Intruely</div>
+          </div>
+        </div>
+
+        <div class="content-pane" id="fullviewContentPane">
+          <!-- Dynamically populated pane content -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Dock Command Bar -->
+    <div class="bottom-dock">
+      <button class="setting-btn" id="listenSessionBtn" style="background:#22c55e; color:black; font-weight:700;">▶ Start Session</button>
+      <input type="text" class="dock-input" id="dockPromptInput" placeholder="Ask Intruely about your screen or audio (Ctrl + Enter)..." />
+      <button class="setting-btn" id="dockSnapBtn">📷 Screen Snap</button>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

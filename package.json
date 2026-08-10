@@ -1,0 +1,25 @@
+{
+  "name": "free-cluely",
+  "version": "1.0.0",
+  "description": "100% Free, Unlimited Stealth AI Meeting & Interview Assistant (Cluely Clone)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "cluely",
+    "ai-assistant",
+    "stealth",
+    "meeting-copilot",
+    "interview-copilot"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "dependencies": {
+    "@google/genai": "^2.16.0",
+    "desktop-screenshot": "^0.1.1",
+    "dotenv": "^17.4.2",
+    "node-global-key-listener": "^0.3.0",
+    "robotjs": "^0.9.1"
+  }
+}
