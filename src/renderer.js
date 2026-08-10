@@ -1,6 +1,7 @@
-// Intruely Core Renderer & Context Modes System
+// Render Production Backend API Endpoint
+const BACKEND_URL = 'https://intruely.onrender.com';
 
-// State & Storage
+// DOM Elements
 let activePane = 'general';
 let isStealthActive = false;
 let isSessionActive = false;
@@ -210,10 +211,30 @@ function saveModePrompt() {
   }
 }
 
-// AI Engine Call (Gemini 2.0 Flash)
+// AI Engine Call (Tries Render Production Backend Proxy First, falls back to direct API key)
 async function callAI(userPrompt, imageBase64 = null) {
+  try {
+    const res = await fetch(`${BACKEND_URL}/ai/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: userPrompt,
+        imageBase64: imageBase64,
+        modePrompt: customPromptMode
+      })
+    });
+    
+    if (res.ok) {
+      const data = await res.json();
+      if (data.response) return data.response;
+    }
+  } catch (backendErr) {
+    console.log('Backend proxy unavailable, trying direct API key fallback...', backendErr);
+  }
+
+  // Fallback: Direct Gemini API Call if BYOK API key configured
   if (!apiKey) {
-    return "⚠️ Please set your free Gemini API key in Profile -> Settings to receive real-time answers!";
+    return "⚠️ Please set your free Gemini API key in Profile -> Settings (or wait a moment for backend to warm up)!";
   }
 
   try {
