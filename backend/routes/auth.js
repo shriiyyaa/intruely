@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const { pool } = require('../db');
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'intruely_secret_dev_key';
+const JWT_SECRET = process.env.JWT_SECRET_KEY || process.env.JWT_SECRET || 'intruely_secret_dev_key';
 const JWT_EXPIRES = '30d'; // 30-day sessions
 
 // POST /auth/signup

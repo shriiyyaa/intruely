@@ -6,7 +6,8 @@ const router = express.Router();
 
 // Primary & Backup API Keys for Gemini
 const GEMINI_API_KEYS = [
-  process.env.GEMINI_API_KEY_PRIMARY || process.env.GEMINI_API_KEY,
+  process.env.GEMINI_API_KEY,
+  process.env.GEMINI_API_KEY_PRIMARY,
   process.env.GEMINI_API_KEY_BACKUP,
   process.env.GEMINI_API_KEY_BACKUP2
 ].filter(Boolean);
