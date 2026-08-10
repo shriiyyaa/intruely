@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intruely — Free Stealth AI Meeting & Interview Copilot for Windows</title>
+  <meta name="description" content="Intruely is a 100% free, unlimited, stealth AI meeting and interview assistant for Windows. Invisible to Zoom, Teams, Meet & Discord. No subscription. No limits.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080A10;
+      --surface: #0F1119;
+      --border: rgba(255,255,255,0.08);
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+      --green: #22C55E;
+      --purple: #A855F7;
+      --blue: #3B82F6;
+      --grad: linear-gradient(135deg, #6366F1 0%, #A855F7 50%, #EC4899 100%);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(8,10,16,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .nav-logo {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      background: var(--grad);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 900;
+      box-shadow: 0 0 20px rgba(99,102,241,0.5);
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 30px; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      background: var(--grad);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(99,102,241,0.4);
+      transition: all 0.2s;
+    }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.6); }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(ellipse, rgba(99,102,241,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.3);
+      color: var(--green);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 28px;
+      animation: fadeInDown 0.6s ease-out;
+    }
+
+    .hero-badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero h1 {
+      font-size: clamp(48px, 8vw, 96px);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -3px;
+      margin-bottom: 24px;
+      animation: fadeInUp 0.7s ease-out 0.1s both;
+    }
+
+    .hero h1 .gradient-text {
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 22px);
+      color: var(--muted);
+      max-width: 580px;
+      margin: 0 auto 40px;
+      font-weight: 400;
+      line-height: 1.6;
+      animation: fadeInUp 0.7s ease-out 0.2s both;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeInUp 0.7s ease-out 0.3s both;
+    }
+
+    .btn-download {
+      background: var(--grad);
+      color: white;
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 30px rgba(99,102,241,0.4);
+      transition: all 0.2s;
+    }
+    .btn-download:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(99,102,241,0.6); }
+
+    .btn-github {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 16px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-github:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+
+    .hero-meta {
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--muted);
+      animation: fadeInUp 0.7s ease-out 0.4s both;
+    }
+
+    /* MOCK APP WINDOW */
+    .hero-window {
+      margin-top: 64px;
+      max-width: 760px;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+      animation: fadeInUp 0.8s ease-out 0.4s both;
+    }
+
+    .window-bar {
+      background: #0F1119;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .window-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-red { background: #EF4444; }
+    .dot-yellow { background: #F59E0B; }
+    .dot-green { background: #22C55E; }
+
+    .window-title { flex: 1; text-align: center; font-size: 12px; color: var(--muted); }
+
+    .stealth-chip {
+      display: flex; align-items: center; gap: 5px;
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.25);
+      color: var(--green);
+      font-size: 11px; font-weight: 600;
+      padding: 3px 9px; border-radius: 10px;
+    }
+
+    .window-body {
+      background: #0B0D15;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 260px;
+    }
+
+    .ai-card {
+      background: #13151F;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .ai-card-tag {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      color: var(--purple); margin-bottom: 8px; letter-spacing: 0.5px;
+    }
+
+    .ai-card-text { font-size: 13px; line-height: 1.6; color: #E2E8F0; }
+
+    .code-block {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      color: #38BDF8;
+      margin-top: 8px;
+    }
+
+    /* FEATURES */
+    .features {
+      padding: 100px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-tag {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--purple);
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      margin-bottom: 16px;
+      line-height: 1.1;
+    }
+
+    .section-sub {
+      text-align: center;
+      color: var(--muted);
+      max-width: 500px;
+      margin: 0 auto 64px;
+      font-size: 16px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: all 0.2s;
+    }
+    .feature-card:hover { border-color: rgba(168,85,247,0.3); transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+
+    .feature-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .feature-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .feature-desc { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* SHORTCUTS */
+    .shortcuts {
+      padding: 80px 24px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .shortcuts-inner { max-width: 700px; margin: 0 auto; }
+
+    .shortcut-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .shortcut-row:last-child { border-bottom: none; }
+
+    .shortcut-label { font-size: 14px; color: #CBD5E1; }
+
+    .key-group { display: flex; gap: 4px; }
+
+    .key {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-family: monospace;
+      color: white;
+    }
+
+    /* HOW IT WORKS */
+    .how {
+      padding: 100px 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .steps { display: flex; flex-direction: column; gap: 32px; margin-top: 56px; }
+
+    .step {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: var(--grad);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 16px;
+      box-shadow: 0 0 20px rgba(99,102,241,0.4);
+    }
+
+    .step-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .step-desc { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* CTA SECTION */
+    .cta-section {
+      padding: 120px 24px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      bottom: -200px; left: 50%;
+      transform: translateX(-50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(ellipse, rgba(168,85,247,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-section h2 {
+      font-size: clamp(36px, 6vw, 72px);
+      font-weight: 900;
+      letter-spacing: -2px;
+      margin-bottom: 20px;
+      line-height: 1.05;
+    }
+
+    .cta-section p {
+      color: var(--muted);
+      font-size: 18px;
+      max-width: 480px;
+      margin: 0 auto 40px;
+    }
+
+    /* FOOTER */
+    footer {
+      padding: 32px 40px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 640px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      footer { flex-direction: column; gap: 12px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-brand" href="#">
+      <div class="nav-logo">I</div>
+      Intruely
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How It Works</a>
+      <a href="https://github.com/shriiyyaa/intruely" target="_blank">GitHub</a>
+    </div>
+    <a class="nav-cta" href="https://github.com/shriiyyaa/intruely/releases/tag/v1.0.0" target="_blank">⬇ Download Free</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">
+      <div class="hero-badge-dot"></div>
+      100% Free · Unlimited Sessions · No Subscription
+    </div>
+
+    <h1>Your invisible <span class="gradient-text">AI copilot</span><br>for every meeting.</h1>
+
+    <p class="hero-sub">
+      Intruely listens, watches your screen, and delivers instant AI answers — completely hidden from Zoom, Teams, Google Meet, and Discord screen sharing.
+    </p>
+
+    <div class="hero-actions">
+      <a class="btn-download" href="https://github.com/shriiyyaa/intruely/releases/tag/v1.0.0" target="_blank">
+        ⬇ Download for Windows
+        <span style="font-size:11px; opacity:0.7; font-weight:400;">Free · ~77MB</span>
+      </a>
+      <a class="btn-github" href="https://github.com/shriiyyaa/intruely" target="_blank">
+        ⭐ View on GitHub
+      </a>
+    </div>
+
+    <p class="hero-meta">Windows 10/11 · Free Gemini API · No credit card</p>
+
+    <!-- Mock App Window -->
+    <div class="hero-window">
+      <div class="window-bar">
+        <div class="window-dot dot-red"></div>
+        <div class="window-dot dot-yellow"></div>
+        <div class="window-dot dot-green"></div>
+        <div class="window-title">Intruely <span style="opacity:0.5">FREE</span></div>
+        <div class="stealth-chip">
+          <div class="hero-badge-dot" style="width:5px;height:5px;"></div>
+          Stealth Active
+        </div>
+      </div>
+      <div class="window-body">
+        <div class="ai-card">
+          <div class="ai-card-tag">🗣 Live Audio Transcript</div>
+          <div class="ai-card-text">"Can you walk us through your approach to designing a scalable microservices architecture?"</div>
+        </div>
+        <div class="ai-card">
+          <div class="ai-card-tag">✨ Intruely AI · Instant Response</div>
+          <div class="ai-card-text">
+            I'd start by identifying service boundaries using Domain-Driven Design. Key principles:
+            <div class="code-block">
+              1. Single responsibility per service<br>
+              2. API Gateway for routing & auth<br>
+              3. Event-driven communication (Kafka/RabbitMQ)<br>
+              4. Independent deployability via Docker/K8s<br>
+              5. Circuit breakers for fault tolerance
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="section-tag">Why Intruely</div>
+    <h2 class="section-title">Everything Cluely has.<br>Completely free.</h2>
+    <p class="section-sub">Every feature of the $20/month paid app, rebuilt open source with zero session limits.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(99,102,241,0.15);">🛡️</div>
+        <div class="feature-title">100% Stealth Mode</div>
+        <div class="feature-desc">Uses Windows native <code style="color:#38BDF8; font-size:11px;">WDA_EXCLUDEFROMCAPTURE</code> API. Completely invisible to Zoom, Teams, Google Meet, Discord, OBS, and any screen recorder.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(168,85,247,0.15);">📂</div>
+        <div class="feature-title">Manage Modes</div>
+        <div class="feature-desc">Create custom AI context prompts per session — include your resume, interview prep, job description, or technical reference. AI uses it for every live answer.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(34,197,94,0.15);">🎙️</div>
+        <div class="feature-title">AirPods & Headset Support</div>
+        <div class="feature-desc">Automatically detects all audio devices — AirPods, Bluetooth headsets, external mics, or built-in microphone. Switch mid-session with one click.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(236,72,153,0.15);">📷</div>
+        <div class="feature-title">Instant Screen Solver</div>
+        <div class="feature-desc">Press <strong>Ctrl + Enter</strong> to instantly screenshot any visible coding problem, question, or diagram and receive a detailed AI solution in under a second.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(59,130,246,0.15);">⚡</div>
+        <div class="feature-title">Unlimited & Free Forever</div>
+        <div class="feature-desc">Powered by Google Gemini 2.0 Flash (free API tier — 1,500 requests/day for $0). No subscription. No session limits. No data sent to our servers.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(245,158,11,0.15);">⌨️</div>
+        <div class="feature-title">Exact Cluely Keybinds</div>
+        <div class="feature-desc">Identical keyboard shortcuts to Cluely: toggle visibility, start sessions, capture screen, clear conversation — all muscle memory from day one.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KEYBOARD SHORTCUTS -->
+  <section class="shortcuts">
+    <div class="shortcuts-inner">
+      <div class="section-tag" style="text-align:left;">Keyboard Shortcuts</div>
+      <h2 class="section-title" style="text-align:left; font-size:32px; margin-bottom:32px;">Control everything<br>without lifting your eyes.</h2>
+
+      <div class="shortcut-row">
+        <span class="shortcut-label">Toggle visibility of Intruely</span>
+        <div class="key-group"><span class="key">Ctrl</span><span class="key">\</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-label">Ask Intruely about your screen or audio</span>
+        <div class="key-group"><span class="key">Ctrl</span><span class="key">Enter</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-label">Start or stop an Intruely session</span>
+        <div class="key-group"><span class="key">Ctrl</span><span class="key">Shift</span><span class="key">\</span></div>
+      </div>
+      <div class="shortcut-row">
+        <span class="shortcut-label">Clear the current conversation</span>
+        <div class="key-group"><span class="key">Ctrl</span><span class="key">R</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how" id="how">
+    <div class="section-tag">How It Works</div>
+    <h2 class="section-title">Up and running in<br>under 2 minutes.</h2>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">Download & Run</div>
+          <div class="step-desc">Download <strong>Intruely 1.0.0.exe</strong> (~77MB portable). No installer, no admin rights needed. Just double-click and it runs.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">Get Your Free API Key</div>
+          <div class="step-desc">Visit <a href="https://aistudio.google.com/" target="_blank" style="color:#A855F7;">aistudio.google.com</a>, sign in with Google, and copy your free Gemini API key. Takes under 30 seconds.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-title">Set Up Your Mode</div>
+          <div class="step-desc">Click your profile → <strong>Manage Modes</strong>. Paste your resume, interview prep notes, or any context you want the AI to reference in every answer.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>
+          <div class="step-title">Go Stealth & Start</div>
+          <div class="step-desc">Toggle <strong>Stealth Active</strong> — the app becomes invisible to screen sharing. Press <strong>Ctrl + Enter</strong> during any meeting to get instant, context-aware AI answers.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2>Ready to ace every<br><span style="background: var(--grad); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">meeting & interview?</span></h2>
+    <p>100% free. Unlimited sessions. Download once, use forever.</p>
+    <div class="hero-actions" style="justify-content:center;">
+      <a class="btn-download" href="https://github.com/shriiyyaa/intruely/releases/tag/v1.0.0" target="_blank">
+        ⬇ Download Intruely for Windows
+      </a>
+      <a class="btn-github" href="https://github.com/shriiyyaa/intruely" target="_blank">
+        ⭐ Star on GitHub
+      </a>
+    </div>
+    <p style="margin-top:16px; font-size:12px; color: var(--muted);">Windows 10 / 11 · Open Source · MIT License</p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div>© 2025 Intruely. Built with ❤️ as a free, open-source alternative to Cluely.</div>
+    <div style="display:flex; gap:20px;">
+      <a href="https://github.com/shriiyyaa/intruely" target="_blank">GitHub</a>
+      <a href="https://github.com/shriiyyaa/intruely/releases" target="_blank">Releases</a>
+      <a href="https://github.com/shriiyyaa/intruely/issues" target="_blank">Issues</a>
+    </div>
+  </footer>
+
+</body>
+</html>
