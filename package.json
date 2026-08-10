@@ -4,7 +4,30 @@
   "description": "100% Free, Unlimited Stealth AI Meeting & Interview Assistant (Cluely Clone)",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.intruely.app",
+    "productName": "Intruely",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   },
   "keywords": [
     "cluely",
@@ -19,7 +42,11 @@
     "@google/genai": "^2.16.0",
     "desktop-screenshot": "^0.1.1",
     "dotenv": "^17.4.2",
-    "node-global-key-listener": "^0.3.0",
-    "robotjs": "^0.9.1"
+    "robotjs": "^0.9.1",
+    "uiohook-napi": "^1.5.5"
+  },
+  "devDependencies": {
+    "electron": "^34.0.0",
+    "electron-builder": "^26.15.3"
   }
 }
