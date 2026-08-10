@@ -64,20 +64,19 @@ app.use((err, req, res, next) => {
 });
 
 // 404
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+// Start Server immediately (DB initialization non-blocking fallback)
+app.listen(PORT, () => {
+  console.log(`\n🚀 Intruely Backend running on port ${PORT}`);
+  console.log(`🌐 Endpoints: /auth | /ai | /modes`);
+  console.log(`💚 Health: http://localhost:${PORT}/health\n`);
+  
+  if (process.env.DATABASE_URL) {
+    initDB().catch(err => console.warn('⚠️ DB connection failed, using in-memory mode:', err.message));
+  } else {
+    console.log('ℹ️ Running in AI Proxy / BYOK mode (DATABASE_URL not set)');
+  }
 });
 
-// Init DB then Start Server
-initDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`\n🚀 Intruely Backend running on port ${PORT}`);
-    console.log(`🌐 Endpoints: /auth | /ai | /modes`);
-    console.log(`💚 Health: http://localhost:${PORT}/health\n`);
-  });
-}).catch(err => {
-  console.error('Failed to initialize DB:', err);
-  process.exit(1);
-});
+
 
 module.exports = app;
