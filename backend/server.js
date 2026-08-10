@@ -14,29 +14,16 @@ const PORT = process.env.PORT || 3001;
 
 // Security & Middleware
 app.use(helmet());
+// Allow Desktop Electron app & Web clients
 app.use(cors({
-  origin: ['https://shriiyyaa.github.io', 'http://localhost:3000', 'app://.' , 'null'],
-  credentials: true
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json({ limit: '10mb' })); // large for base64 screenshots
 
-// Global rate limiter - 300 reqs per 15 min per IP
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300,
-  message: { error: 'Too many requests. Please wait a moment.' }
-});
-app.use(globalLimiter);
+app.use(express.json({ limit: '15mb' }));
 
-// Stricter AI limiter - 100 AI calls per 24h per user (generous for free)
-const aiLimiter = rateLimit({
-  windowMs: 24 * 60 * 60 * 1000,
-  max: 200,
-  keyGenerator: (req) => req.user?.id || req.ip,
-  message: { error: 'Daily AI limit reached. Upgrade or try again tomorrow.' }
-});
-
-// Health Check
+// Health Check Endpoints (Exempt from Rate Limiting)
 app.get('/', (req, res) => {
   res.json({
     service: 'Intruely Backend API',
@@ -50,30 +37,49 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-// Routes
+// Global Rate Limiter (300 requests per 15 min per IP)
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: { error: 'Rate limit exceeded. Please wait a moment.' }
+});
+app.use(globalLimiter);
+
+// AI Endpoint Rate Limiter (300 requests per 15 min)
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  keyGenerator: (req) => req.ip,
+  message: { error: 'AI limit reached for this IP. Please wait a few minutes.' }
+});
+
+// Route Mounting
 app.use('/auth', authRoutes);
 app.use('/ai', aiLimiter, aiRoutes);
 app.use('/modes', modesRoutes);
 
-// Global Error Handler
+// 404 Route Handler
+app.use((req, res) => {
+  res.status(404).json({ error: `Route ${req.method} ${req.url} not found` });
+});
+
+// Global Error Middleware
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err.message);
+  console.error('[Server Error]', err);
   res.status(err.status || 500).json({
     error: err.message || 'Internal server error'
   });
 });
 
-// 404
-// Start Server immediately (DB initialization non-blocking fallback)
+// Server Initialization
 app.listen(PORT, () => {
-  console.log(`\n🚀 Intruely Backend running on port ${PORT}`);
-  console.log(`🌐 Endpoints: /auth | /ai | /modes`);
-  console.log(`💚 Health: http://localhost:${PORT}/health\n`);
-  
+  console.log(`\n🚀 Intruely Server listening on port ${PORT}`);
+  console.log(`💚 Health Check: http://localhost:${PORT}/health\n`);
+
   if (process.env.DATABASE_URL) {
-    initDB().catch(err => console.warn('⚠️ DB connection failed, using in-memory mode:', err.message));
+    initDB().catch(err => console.warn('⚠️ Database connection warning:', err.message));
   } else {
-    console.log('ℹ️ Running in AI Proxy / BYOK mode (DATABASE_URL not set)');
+    console.log('ℹ️ Operating in Stateless AI Proxy mode (DATABASE_URL not set)');
   }
 });
 

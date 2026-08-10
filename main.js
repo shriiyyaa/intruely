@@ -6,10 +6,10 @@ let mainWindow = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 950,
-    height: 650,
-    minWidth: 700,
-    minHeight: 500,
+    width: 960,
+    height: 660,
+    minWidth: 720,
+    minHeight: 520,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -20,38 +20,49 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: false
+      webSecurity: true
     }
   });
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
-  applyStealthProtection(true);
+  // Default to Stealth Mode on launch
+  setStealthAffinity(true);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 }
 
-function applyStealthProtection(enable = true) {
-  if (process.platform === 'win32' && mainWindow) {
+/**
+ * Applies Windows WDA_EXCLUDEFROMCAPTURE affinity so window is invisible to Zoom/Teams/Meet/Discord
+ */
+function setStealthAffinity(enable = true) {
+  if (!mainWindow) return;
+
+  // First attempt Electron native content protection
+  try {
+    mainWindow.setContentProtection(enable);
+  } catch (err) {
+    console.warn('Native content protection fallback warning:', err.message);
+  }
+
+  // Windows-specific Win32 API display affinity call (0x02 = WDA_EXCLUDEFROMCAPTURE, 0x00 = WDA_NONE)
+  if (process.platform === 'win32') {
     try {
       const handle = mainWindow.getNativeWindowHandle();
       const hwnd = handle.readInt32LE(0);
-      const affinityVal = enable ? 2 : 0;
+      const val = enable ? 2 : 0;
       
-      // Clean PowerShell snippet without multiline string parsing errors
-      const psCommand = 'Add-Type -TypeDefinition "using System; using System.Runtime.InteropServices; public class Win32 { [DllImport(\\"user32.dll\\")] public static extern bool SetWindowDisplayAffinity(IntPtr hwnd, uint affinity); }"; [Win32]::SetWindowDisplayAffinity([IntPtr]' + hwnd + ', ' + affinityVal + ')';
+      const psScript = `[reflection.assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null; $type = Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class Win32Native { [DllImport("user32.dll")] public static extern bool SetWindowDisplayAffinity(IntPtr hwnd, uint affinity); }' -PassThru; [Win32Native]::SetWindowDisplayAffinity([IntPtr]${hwnd}, ${val})`;
 
-      exec(`powershell -Command "${psCommand}"`, (err) => {
-        if (err) {
-          console.log('Stealth status update:', err.message);
-        } else {
-          console.log(`Stealth Window affinity updated: ${enable ? 'INVISIBLE' : 'VISIBLE'}`);
+      exec(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psScript}"`, (err) => {
+        if (!err) {
+          console.log(`[Stealth Engine] Display affinity set to ${enable ? 'INVISIBLE (0x02)' : 'VISIBLE (0x00)'}`);
         }
       });
     } catch (e) {
-      console.error('Error applying stealth protection:', e);
+      console.error('[Stealth Engine] Affinity error:', e);
     }
   }
 }
@@ -59,78 +70,64 @@ function applyStealthProtection(enable = true) {
 app.whenReady().then(() => {
   createWindow();
 
-  // Register Global Hotkeys matching Cluely specs
-  // Ctrl + \ : Toggle Intruely Visibility
+  // Register Global Keybinds (Matching Cluely specifications)
+  // Ctrl + \ : Hide/Show Intruely Overlay
   globalShortcut.register('CommandOrControl+\\', () => {
-    if (mainWindow) {
-      if (mainWindow.isVisible()) {
-        mainWindow.hide();
-      } else {
-        mainWindow.show();
-      }
+    if (!mainWindow) return;
+    if (mainWindow.isVisible()) {
+      mainWindow.hide();
+    } else {
+      mainWindow.show();
+      mainWindow.focus();
     }
   });
 
-  // Ctrl + Shift + \ : Start or stop Intruely session
+  // Ctrl + Shift + \ : Start/Stop Session
   globalShortcut.register('CommandOrControl+Shift+\\', () => {
-    if (mainWindow) {
-      mainWindow.webContents.send('toggle-session-hotkey');
-    }
+    if (mainWindow) mainWindow.webContents.send('toggle-session-hotkey');
   });
 
-  // Ctrl + Enter : Ask Intruely about screen/audio
+  // Ctrl + Enter : Instant Screen Vision Question Solver
   globalShortcut.register('CommandOrControl+Return', () => {
-    if (mainWindow) {
-      mainWindow.webContents.send('trigger-screen-capture');
-    }
+    if (mainWindow) mainWindow.webContents.send('trigger-screen-capture');
   });
 
-  // Window Position Shortcuts (Matching Cluely Keybinds)
-  // Ctrl + Up : Move window position up
+  // Window Position Adjustment (Ctrl + Arrows)
   globalShortcut.register('CommandOrControl+Up', () => {
     if (mainWindow) {
       const [x, y] = mainWindow.getPosition();
-      mainWindow.setPosition(x, Math.max(0, y - 50));
+      mainWindow.setPosition(x, Math.max(0, y - 40));
     }
   });
 
-  // Ctrl + Down : Move window position down
   globalShortcut.register('CommandOrControl+Down', () => {
     if (mainWindow) {
       const [x, y] = mainWindow.getPosition();
-      mainWindow.setPosition(x, y + 50);
+      mainWindow.setPosition(x, y + 40);
     }
   });
 
-  // Ctrl + Left : Move window position left
   globalShortcut.register('CommandOrControl+Left', () => {
     if (mainWindow) {
       const [x, y] = mainWindow.getPosition();
-      mainWindow.setPosition(Math.max(0, x - 50), y);
+      mainWindow.setPosition(Math.max(0, x - 40), y);
     }
   });
 
-  // Ctrl + Right : Move window position right
   globalShortcut.register('CommandOrControl+Right', () => {
     if (mainWindow) {
       const [x, y] = mainWindow.getPosition();
-      mainWindow.setPosition(x + 50, y);
+      mainWindow.setPosition(x + 40, y);
     }
   });
 
-  // Scroll Response Window Shortcuts
-  // Ctrl + Shift + Up : Scroll response window up
+  // Response Panel Scroll (Ctrl + Shift + Arrows)
   globalShortcut.register('CommandOrControl+Shift+Up', () => {
-    if (mainWindow) {
-      mainWindow.webContents.send('scroll-window', -150);
-    }
+    if (mainWindow) mainWindow.webContents.send('scroll-window', -160);
   });
 
-  // Ctrl + Shift + Down : Scroll response window down
   globalShortcut.register('CommandOrControl+Shift+Down', () => {
-    if (mainWindow) {
-      mainWindow.webContents.send('scroll-window', 150);
-    }
+    if (mainWindow) mainWindow.webContents.send('scroll-window', 160);
   });
 
   app.on('activate', () => {
@@ -146,21 +143,26 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// IPC Handlers
+// IPC Handler Registrations
 ipcMain.handle('get-screen-sources', async () => {
-  const sources = await desktopCapturer.getSources({
-    types: ['screen'],
-    thumbnailSize: { width: 1920, height: 1080 }
-  });
-  return sources.map(s => ({
-    id: s.id,
-    name: s.name,
-    dataUrl: s.thumbnail.toDataURL()
-  }));
+  try {
+    const sources = await desktopCapturer.getSources({
+      types: ['screen'],
+      thumbnailSize: { width: 1920, height: 1080 }
+    });
+    return sources.map(s => ({
+      id: s.id,
+      name: s.name,
+      dataUrl: s.thumbnail.toDataURL()
+    }));
+  } catch (err) {
+    console.error('Desktop capturer error:', err);
+    return [];
+  }
 });
 
 ipcMain.handle('toggle-stealth', (event, enable) => {
-  applyStealthProtection(enable);
+  setStealthAffinity(enable);
   return enable;
 });
 
@@ -171,3 +173,4 @@ ipcMain.handle('minimize-window', () => {
 ipcMain.handle('close-window', () => {
   if (mainWindow) mainWindow.close();
 });
+
