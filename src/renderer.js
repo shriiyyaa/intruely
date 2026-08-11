@@ -273,40 +273,51 @@ function buildRecognition(stream, sourceLabel) {
 }
 
 async function startSpeechRecognition() {
-  if (liveSpeechText) liveSpeechText.innerText = 'Starting audio capture...';
+  if (liveSpeechText) liveSpeechText.innerText = 'Starting audio speech recognition...';
+  const splitLiveStatus = document.getElementById('splitLiveStatus');
+  if (splitLiveStatus) splitLiveStatus.classList.add('active');
 
-  // --- TRACK 1: MICROPHONE ---
-  try {
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    micRecognition = buildRecognition(micStream, 'MIC');
-    if (liveSpeechText) liveSpeechText.innerText = '🎙️ Microphone active | detecting system audio...';
-  } catch(e) {
-    console.warn('Mic access denied:', e);
-    if (liveSpeechText) liveSpeechText.innerText = 'Mic access denied. Grant mic permission.';
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    if (liveSpeechText) liveSpeechText.innerText = 'Web Speech API not supported in browser context.';
+    return;
   }
 
-  // --- TRACK 2: SYSTEM AUDIO (loopback via desktopCapturer) ---
   try {
-    const sources = await window.electronAPI.getAudioSources();
-    const screenSource = sources.find(s => s.name === 'Entire Screen' || s.name.toLowerCase().includes('screen')) || sources[0];
-    
-    if (screenSource) {
-      // getUserMedia with chromeMediaSource maps to desktopCapturer source
-      systemAudioStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          mandatory: {
-            chromeMediaSource: 'desktop',
-            chromeMediaSourceId: screenSource.id
-          }
-        },
-        video: false
-      });
-      systemRecognition = buildRecognition(systemAudioStream, 'AUDIO');
-      if (liveSpeechText) liveSpeechText.innerText = '🟢 Listening: Mic + System Audio active';
-    }
-  } catch(e) {
-    console.warn('System audio capture error:', e.message);
-    if (liveSpeechText) liveSpeechText.innerText = '🎙️ Mic active (system audio unavailable)';
+    micRecognition = new SpeechRecognition();
+    micRecognition.continuous = true;
+    micRecognition.interimResults = true;
+    micRecognition.lang = 'en-US';
+
+    micRecognition.onresult = (event) => {
+      let currentText = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        currentText += event.results[i][0].transcript;
+      }
+      if (currentText.trim()) {
+        appendTranscriptEntry(currentText.trim(), 'AUDIO');
+      }
+    };
+
+    micRecognition.onerror = (err) => {
+      if (err.error !== 'no-speech') {
+        console.warn('Speech recognition warning:', err.error);
+      }
+    };
+
+    micRecognition.onend = () => {
+      if (isSessionActive) {
+        try { micRecognition.start(); } catch(e) {}
+      } else {
+        if (splitLiveStatus) splitLiveStatus.classList.remove('active');
+      }
+    };
+
+    micRecognition.start();
+    if (liveSpeechText) liveSpeechText.innerText = '🟢 Listening live audio stream...';
+  } catch (e) {
+    console.error('Speech init error:', e);
+    if (liveSpeechText) liveSpeechText.innerText = 'Speech recognition initialization failed.';
   }
 }
 
