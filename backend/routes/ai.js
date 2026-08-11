@@ -123,7 +123,7 @@ Core Interview Execution Principles:
         try {
           console.log('[AI] Falling back to Groq llama3-70b-8192...');
           const groqPayload = {
-            model: 'llama3-70b-8192',
+            model: 'llama-3.3-70b-versatile',
             messages: [
               { role: 'system', content: systemContext },
               { role: 'user',   content: prompt || 'Analyze the attached image and provide the immediate answer.' }

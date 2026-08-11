@@ -595,70 +595,80 @@ function saveModePrompt() {
 }
 
 // AI Engine Call
+// Provider waterfall: Cloud Backend → Direct Gemini BYOK → Groq BYOK
 async function callAI(userPrompt, imageBase64 = null) {
+  const systemPrompt = customPromptMode || `You are Intruely AI, an elite real-time interview copilot. For behavioral questions use STAR framework. For coding questions give 3-tier approach (brute force → optimized → optimal) in C++/Python. Be concise, authoritative, first-person.`;
+
+  // ── 1. Try cloud backend (fast path, handles key rotation server-side) ──────
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
-
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(`${BACKEND_URL}/ai/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
-      body: JSON.stringify({
-        prompt: userPrompt,
-        imageBase64: imageBase64,
-        modePrompt: customPromptMode
-      })
+      body: JSON.stringify({ prompt: userPrompt, imageBase64, modePrompt: systemPrompt })
     });
     clearTimeout(timeoutId);
-    
     if (res.ok) {
       const data = await res.json();
       if (data.response) return data.response;
-    } else {
-      const errData = await res.json().catch(() => ({}));
-      if (errData.error) return `⚠️ Backend Error (${res.status}): ${errData.error}`;
     }
-  } catch (backendErr) {
-    console.log('Backend proxy network error or timeout:', backendErr);
+  } catch (e) {
+    console.log('[AI] Cloud backend unavailable, trying direct BYOK:', e.message);
   }
 
-  if (!apiKey) {
-    return "⚡ Free Cloud Backend is warming up on Render (free tier cold-start)! Please try again in 15 seconds, or add your free Gemini API key in Profile -> Settings for zero-wait responses.";
-  }
-
-  try {
-    const fullPrompt = `System Context Mode:\n${customPromptMode}\n\nUser Question/Screen Request: ${userPrompt}\nGive a direct, optimal answer tailored to the mode instructions above.`;
-
-    let payload = {
-      contents: [{
-        parts: [{ text: fullPrompt }]
-      }]
-    };
-
-    if (imageBase64) {
-      payload.contents[0].parts.push({
-        inline_data: {
-          mime_type: "image/png",
-          data: imageBase64.replace(/^data:image\/\w+;base64,/, "")
+  // ── 2. Direct Gemini BYOK (no cold-start, instant) ─────────────────────────
+  if (apiKey) {
+    try {
+      const fullPrompt = `${systemPrompt}\n\nUser Question: ${userPrompt}`;
+      let payload = { contents: [{ parts: [{ text: fullPrompt }] }] };
+      if (imageBase64) {
+        payload.contents[0].parts.push({
+          inline_data: { mime_type: 'image/png', data: imageBase64.replace(/^data:image\/\w+;base64,/, '') }
+        });
+      }
+      const geminiModels = ['gemini-1.5-flash', 'gemini-2.0-flash-exp'];
+      for (const model of geminiModels) {
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
+        );
+        const data = await resp.json();
+        if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+          return data.candidates[0].content.parts[0].text;
         }
-      });
+      }
+    } catch (e) {
+      console.log('[AI] Direct Gemini BYOK failed:', e.message);
     }
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await response.json();
-    if (data?.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-      return data.candidates[0].content.parts[0].text;
-    }
-    return `No response generated: ${data?.error?.message || 'API rate limited.'}`;
-  } catch (err) {
-    return `Error connecting to AI: ${err.message}`;
   }
+
+  // ── 3. Groq BYOK fallback (llama-3.3-70b-versatile) ───────────────────────
+  const groqKey = localStorage.getItem('GROQ_API_KEY');
+  if (groqKey) {
+    try {
+      const groqResp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.2,
+          max_tokens: 2048
+        })
+      });
+      const groqData = await groqResp.json();
+      if (groqData.choices?.[0]?.message?.content) return groqData.choices[0].message.content;
+    } catch (e) {
+      console.log('[AI] Groq BYOK failed:', e.message);
+    }
+  }
+
+  return '⚠️ All AI providers unavailable. Check your internet connection or add a Gemini API key in Settings.';
 }
 
 // Dock Handlers
