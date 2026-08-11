@@ -125,6 +125,8 @@ hideFloatingBtn?.addEventListener('click', () => {
   if (mainAppWindow) mainAppWindow.style.display = 'flex';
 });
 
+let isListeningActive = false;
+
 function toggleSession() {
   isSessionActive = !isSessionActive;
   if (isSessionActive) {
@@ -141,11 +143,11 @@ function toggleSession() {
       heroStartBtn.style.background = '#ef4444';
     }
 
-    // Hide onboarding card once session begins
     const emptyCard = document.getElementById('emptyStateCard');
     if (emptyCard) emptyCard.style.display = 'none';
 
-    startSpeechRecognition();
+    // DOES NOT START LISTENING AUTOMATICALLY ANYMORE
+    if (liveSpeechText) liveSpeechText.innerText = 'Session started. Click "▶ Listen" to begin recording.';
   } else {
     if (floatingOverlay) floatingOverlay.style.display = 'none';
     if (mainAppWindow) mainAppWindow.style.display = 'flex';
@@ -159,6 +161,26 @@ function toggleSession() {
       heroStartBtn.style.background = '#3b82f6';
     }
 
+    if (isListeningActive) toggleListening();
+  }
+}
+
+const startListeningBtn = document.getElementById('startListeningBtn');
+startListeningBtn?.addEventListener('click', toggleListening);
+
+function toggleListening() {
+  isListeningActive = !isListeningActive;
+  if (isListeningActive) {
+    if (startListeningBtn) {
+      startListeningBtn.innerText = '⏸ Stop Listen';
+      startListeningBtn.style.color = '#ef4444';
+    }
+    startSpeechRecognition();
+  } else {
+    if (startListeningBtn) {
+      startListeningBtn.innerText = '▶ Listen';
+      startListeningBtn.style.color = '#22c55e';
+    }
     stopSpeechRecognition();
   }
 }
@@ -276,26 +298,13 @@ function buildRecognition(stream, sourceLabel) {
 }
 
 async function startSpeechRecognition() {
+  if (liveSpeechText) liveSpeechText.innerText = 'Starting audio speech recognition...';
   const splitLiveStatus = document.getElementById('splitLiveStatus');
   if (splitLiveStatus) splitLiveStatus.classList.add('active');
 
-  // Step 1: Explicitly request mic access — this unlocks Web Speech API in Electron
-  try {
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    console.log('[Mic] getUserMedia granted — tracks:', micStream.getAudioTracks().length);
-    if (liveSpeechText) liveSpeechText.innerText = '🎙️ Microphone access granted. Starting recognition...';
-  } catch (micErr) {
-    console.error('[Mic] getUserMedia denied:', micErr);
-    if (liveSpeechText) liveSpeechText.innerText = `❌ Microphone denied: ${micErr.message}. Grant mic permission in Windows Settings > Privacy > Microphone.`;
-    appendTranscriptEntry(`Microphone access denied: ${micErr.message}`, 'ERROR');
-    return;
-  }
-
-  // Step 2: Start Web Speech Recognition
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    if (liveSpeechText) liveSpeechText.innerText = '❌ SpeechRecognition API not available in this Electron build.';
-    appendTranscriptEntry('SpeechRecognition not supported.', 'ERROR');
+    if (liveSpeechText) liveSpeechText.innerText = 'Web Speech API not supported in browser context.';
     return;
   }
 
@@ -304,78 +313,47 @@ async function startSpeechRecognition() {
     micRecognition.continuous = true;
     micRecognition.interimResults = true;
     micRecognition.lang = 'en-US';
-    micRecognition.maxAlternatives = 1;
-
-    micRecognition.onstart = () => {
-      console.log('[Speech] Recognition started');
-      if (liveSpeechText) liveSpeechText.innerText = '🟢 Listening... speak or play audio.';
-    };
-
-    micRecognition.onaudiostart = () => {
-      console.log('[Speech] Audio detected');
-      if (liveSpeechText) liveSpeechText.innerText = '🟢 Microphone active — detecting speech...';
-    };
-
-    micRecognition.onsoundstart = () => {
-      if (liveSpeechText) liveSpeechText.innerText = '🔊 Sound detected — transcribing...';
-    };
 
     micRecognition.onresult = (event) => {
-      let interim = '';
-      let final = '';
+      let currentText = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) final += t;
-        else interim += t;
+        currentText += event.results[i][0].transcript;
       }
-      const text = (final || interim).trim();
-      if (text) {
-        if (liveSpeechText) liveSpeechText.innerText = `🎙️ "${text}"`;
-        appendTranscriptEntry(text, final ? 'MIC' : '...');
+      if (currentText.trim()) {
+        appendTranscriptEntry(currentText.trim(), 'AUDIO');
       }
     };
 
     micRecognition.onerror = (err) => {
-      console.warn('[Speech] Error:', err.error, err.message);
-      if (err.error === 'not-allowed') {
-        if (liveSpeechText) liveSpeechText.innerText = '❌ Microphone blocked. Allow mic in Windows Privacy Settings.';
-        appendTranscriptEntry('Mic blocked by OS. Go to Windows Settings > Privacy > Microphone > Allow desktop apps.', 'ERROR');
-      } else if (err.error === 'network') {
-        if (liveSpeechText) liveSpeechText.innerText = '⚠️ Speech network error — check internet connection.';
-      } else if (err.error !== 'no-speech') {
-        if (liveSpeechText) liveSpeechText.innerText = `⚠️ Speech error: ${err.error}`;
+      if (err.error !== 'no-speech') {
+        console.warn('Speech recognition warning:', err.error);
       }
     };
 
     micRecognition.onend = () => {
-      console.log('[Speech] Recognition ended. isSessionActive:', isSessionActive);
       if (isSessionActive) {
-        // Auto-restart after 300ms to avoid rapid restart loops
-        setTimeout(() => {
-          if (isSessionActive && micRecognition) {
-            try { micRecognition.start(); } catch(e) { console.warn('[Speech] Restart error:', e.message); }
-          }
-        }, 300);
+        try { micRecognition.start(); } catch(e) {}
       } else {
         if (splitLiveStatus) splitLiveStatus.classList.remove('active');
-        if (liveSpeechText) liveSpeechText.innerText = 'Session stopped.';
       }
     };
 
     micRecognition.start();
+    if (liveSpeechText) liveSpeechText.innerText = '🟢 Listening live audio stream...';
   } catch (e) {
-    console.error('[Speech] Initialization error:', e);
-    if (liveSpeechText) liveSpeechText.innerText = `❌ Speech init failed: ${e.message}`;
-    appendTranscriptEntry(`Speech init failed: ${e.message}`, 'ERROR');
+    console.error('Speech init error:', e);
+    if (liveSpeechText) liveSpeechText.innerText = 'Speech recognition initialization failed.';
   }
 }
 
 function stopSpeechRecognition() {
   try { micRecognition?.stop(); } catch(e) {}
+  try { systemRecognition?.stop(); } catch(e) {}
   try { micStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
+  try { systemAudioStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
   micRecognition = null;
-  micStream = null;
   systemRecognition = null;
+  micStream = null;
   systemAudioStream = null;
   if (liveSpeechText) liveSpeechText.innerText = 'Session stopped.';
 }
@@ -500,10 +478,33 @@ function renderPaneContent(pane) {
 
       <div style="font-size:12px; font-weight:600; margin-top:20px; margin-bottom:8px;">Reference files</div>
       <div style="background:var(--panel-dark); border:1px dashed var(--border-color); border-radius:10px; padding:30px; text-align:center;">
-        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">Add files as real-time context.</div>
-        <button class="setting-btn">📎 Upload file</button>
+        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">Add text files (e.g., .txt, .md, .py, .cpp, .js) as real-time context.</div>
+        <input type="file" id="uploadFileHidden" style="display:none;" accept=".txt,.js,.py,.cpp,.html,.css,.md,.json,.csv" />
+        <button class="setting-btn" id="uploadFileBtn">📎 Upload file</button>
       </div>
     `;
+
+    setTimeout(() => {
+      const uploadFileBtn = document.getElementById('uploadFileBtn');
+      const uploadFileHidden = document.getElementById('uploadFileHidden');
+      const promptModeArea = document.getElementById('promptModeArea');
+      
+      if (uploadFileBtn && uploadFileHidden) {
+        uploadFileBtn.addEventListener('click', () => uploadFileHidden.click());
+        uploadFileHidden.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const content = ev.target.result;
+            const appendText = `\n\n--- [FILE: ${file.name}] ---\n${content}\n`;
+            promptModeArea.value += appendText;
+            saveModePrompt(); // Auto save
+          };
+          reader.readAsText(file);
+        });
+      }
+    }, 50);
   } else if (pane === 'keybinds') {
     fullviewContentPane.innerHTML = `
       <div class="pane-title">Keyboard shortcuts</div>
