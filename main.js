@@ -68,15 +68,23 @@ function setStealthAffinity(enable = true) {
 }
 
 app.whenReady().then(() => {
-  // Allow getDisplayMedia with system audio (loopback)
+  // Enable Web Speech API + audio capture in Electron renderer
   app.commandLine.appendSwitch('enable-features', 'WebRTCPipeWireCapturer');
+  app.commandLine.appendSwitch('enable-speech-input');
+  app.commandLine.appendSwitch('enable-web-speech-api');
+  app.commandLine.appendSwitch('use-fake-ui-for-media-stream', 'false');
 
   createWindow();
 
-  // Grant all media permissions automatically (mic + system audio)
+  // Grant ALL media permissions automatically (mic, camera, speech, desktop)
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-    const allowed = ['media', 'audioCapture', 'desktopCapture', 'screen'];
-    callback(allowed.includes(permission));
+    // Allow everything — Intruely needs mic + screen access
+    callback(true);
+  });
+
+  // Also grant permission checks (Electron 20+)
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+    return true;
   });
 
   // Register Global Keybinds (Matching Cluely specifications)

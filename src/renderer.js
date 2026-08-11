@@ -276,13 +276,26 @@ function buildRecognition(stream, sourceLabel) {
 }
 
 async function startSpeechRecognition() {
-  if (liveSpeechText) liveSpeechText.innerText = 'Starting audio speech recognition...';
   const splitLiveStatus = document.getElementById('splitLiveStatus');
   if (splitLiveStatus) splitLiveStatus.classList.add('active');
 
+  // Step 1: Explicitly request mic access — this unlocks Web Speech API in Electron
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    console.log('[Mic] getUserMedia granted — tracks:', micStream.getAudioTracks().length);
+    if (liveSpeechText) liveSpeechText.innerText = '🎙️ Microphone access granted. Starting recognition...';
+  } catch (micErr) {
+    console.error('[Mic] getUserMedia denied:', micErr);
+    if (liveSpeechText) liveSpeechText.innerText = `❌ Microphone denied: ${micErr.message}. Grant mic permission in Windows Settings > Privacy > Microphone.`;
+    appendTranscriptEntry(`Microphone access denied: ${micErr.message}`, 'ERROR');
+    return;
+  }
+
+  // Step 2: Start Web Speech Recognition
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    if (liveSpeechText) liveSpeechText.innerText = 'Web Speech API not supported in browser context.';
+    if (liveSpeechText) liveSpeechText.innerText = '❌ SpeechRecognition API not available in this Electron build.';
+    appendTranscriptEntry('SpeechRecognition not supported.', 'ERROR');
     return;
   }
 
@@ -291,47 +304,78 @@ async function startSpeechRecognition() {
     micRecognition.continuous = true;
     micRecognition.interimResults = true;
     micRecognition.lang = 'en-US';
+    micRecognition.maxAlternatives = 1;
+
+    micRecognition.onstart = () => {
+      console.log('[Speech] Recognition started');
+      if (liveSpeechText) liveSpeechText.innerText = '🟢 Listening... speak or play audio.';
+    };
+
+    micRecognition.onaudiostart = () => {
+      console.log('[Speech] Audio detected');
+      if (liveSpeechText) liveSpeechText.innerText = '🟢 Microphone active — detecting speech...';
+    };
+
+    micRecognition.onsoundstart = () => {
+      if (liveSpeechText) liveSpeechText.innerText = '🔊 Sound detected — transcribing...';
+    };
 
     micRecognition.onresult = (event) => {
-      let currentText = '';
+      let interim = '';
+      let final = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
-        currentText += event.results[i][0].transcript;
+        const t = event.results[i][0].transcript;
+        if (event.results[i].isFinal) final += t;
+        else interim += t;
       }
-      if (currentText.trim()) {
-        appendTranscriptEntry(currentText.trim(), 'AUDIO');
+      const text = (final || interim).trim();
+      if (text) {
+        if (liveSpeechText) liveSpeechText.innerText = `🎙️ "${text}"`;
+        appendTranscriptEntry(text, final ? 'MIC' : '...');
       }
     };
 
     micRecognition.onerror = (err) => {
-      if (err.error !== 'no-speech') {
-        console.warn('Speech recognition warning:', err.error);
+      console.warn('[Speech] Error:', err.error, err.message);
+      if (err.error === 'not-allowed') {
+        if (liveSpeechText) liveSpeechText.innerText = '❌ Microphone blocked. Allow mic in Windows Privacy Settings.';
+        appendTranscriptEntry('Mic blocked by OS. Go to Windows Settings > Privacy > Microphone > Allow desktop apps.', 'ERROR');
+      } else if (err.error === 'network') {
+        if (liveSpeechText) liveSpeechText.innerText = '⚠️ Speech network error — check internet connection.';
+      } else if (err.error !== 'no-speech') {
+        if (liveSpeechText) liveSpeechText.innerText = `⚠️ Speech error: ${err.error}`;
       }
     };
 
     micRecognition.onend = () => {
+      console.log('[Speech] Recognition ended. isSessionActive:', isSessionActive);
       if (isSessionActive) {
-        try { micRecognition.start(); } catch(e) {}
+        // Auto-restart after 300ms to avoid rapid restart loops
+        setTimeout(() => {
+          if (isSessionActive && micRecognition) {
+            try { micRecognition.start(); } catch(e) { console.warn('[Speech] Restart error:', e.message); }
+          }
+        }, 300);
       } else {
         if (splitLiveStatus) splitLiveStatus.classList.remove('active');
+        if (liveSpeechText) liveSpeechText.innerText = 'Session stopped.';
       }
     };
 
     micRecognition.start();
-    if (liveSpeechText) liveSpeechText.innerText = '🟢 Listening live audio stream...';
   } catch (e) {
-    console.error('Speech init error:', e);
-    if (liveSpeechText) liveSpeechText.innerText = 'Speech recognition initialization failed.';
+    console.error('[Speech] Initialization error:', e);
+    if (liveSpeechText) liveSpeechText.innerText = `❌ Speech init failed: ${e.message}`;
+    appendTranscriptEntry(`Speech init failed: ${e.message}`, 'ERROR');
   }
 }
 
 function stopSpeechRecognition() {
   try { micRecognition?.stop(); } catch(e) {}
-  try { systemRecognition?.stop(); } catch(e) {}
   try { micStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
-  try { systemAudioStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
   micRecognition = null;
-  systemRecognition = null;
   micStream = null;
+  systemRecognition = null;
   systemAudioStream = null;
   if (liveSpeechText) liveSpeechText.innerText = 'Session stopped.';
 }
