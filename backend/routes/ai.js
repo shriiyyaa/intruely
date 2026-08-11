@@ -34,10 +34,17 @@ router.post('/ask', async (req, res) => {
       return res.status(500).json({ error: `Backend AI API Key is missing. Found env keys: [${availableEnvKeys.join(', ')}]` });
     }
 
-    // Build systemic context prompt
-    const systemContext = modePrompt || 'You are Intruely, an ultra-smart, concise real-time interview and meeting assistant. Provide a direct, crystal-clear answer. If it\'s a question or problem, give the exact optimal answer immediately without conversational fluff.';
+    // Build systemic context prompt for hyper-intelligent, personalized, elite meeting/interview responses
+    const systemContext = modePrompt || `You are Intruely AI, an elite real-time copilot for high-stakes interviews and executive meetings.
+Your objective: Deliver immediate, high-impact, expert answers tailored with precision.
+Formatting & Tone Rules:
+1. Direct Impact: Give the exact answer or solution in the very first sentence. Zero filler, zero pleasantries.
+2. Structured Clarity: Use bullet points, bold key technical concepts, or numbered steps for complex answers.
+3. Personalized Voice: Speak with senior executive confidence and deep technical mastery.
+4. Problem Solving: For code/math questions on screen, provide the optimal solution with brief time/space complexity notes.`;
     
-    const fullPrompt = `${systemContext}\n\nUser Prompt/Question: ${prompt || 'Solve the question shown in the attached image.'}`;
+    const fullPrompt = `${systemContext}\n\nUser Prompt/Question/Screen Intent: ${prompt || 'Analyze the attached image and provide the immediate, optimal answer.'}`;
+
 
     let payload = {
       contents: [{
