@@ -683,7 +683,33 @@ body {
   font-size: 11px;
   color: var(--accent-green);
   padding: 4px 6px;
+  cursor: pointer;
 }
+
+.transcript-drawer {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+  max-height: 140px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.drawer-header {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.drawer-content {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--slate-200);
+}
+
 
 .recording-dot {
   width: 8px;

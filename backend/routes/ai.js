@@ -86,13 +86,31 @@ Core Interview Execution Principles:
       });
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    // Fallback list of models in order of priority
+    const models = ['gemini-1.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-pro'];
+    let data = null;
+    let lastError = null;
 
-    const data = await response.json();
+    for (const model of models) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const resData = await response.json();
+        if (resData.candidates && resData.candidates[0]?.content?.parts[0]?.text) {
+          data = resData;
+          break;
+        } else if (resData.error) {
+          lastError = resData.error.message;
+        }
+      } catch (e) {
+        lastError = e.message;
+      }
+    }
+
 
     if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
       const aiResponseText = data.candidates[0].content.parts[0].text;

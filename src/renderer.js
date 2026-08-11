@@ -134,6 +134,25 @@ function toggleSession() {
   }
 }
 
+// Transcript Drawer Toggle Handler
+const toggleTranscriptBtn = document.getElementById('toggleTranscriptBtn');
+const transcriptDrawer = document.getElementById('transcriptDrawer');
+const liveTranscriptIndicator = document.getElementById('liveTranscriptIndicator');
+const transcriptLogContent = document.getElementById('transcriptLogContent');
+
+toggleTranscriptBtn?.addEventListener('click', toggleTranscriptDrawer);
+liveTranscriptIndicator?.addEventListener('click', toggleTranscriptDrawer);
+
+function toggleTranscriptDrawer() {
+  if (transcriptDrawer) {
+    const isHidden = transcriptDrawer.style.display === 'none';
+    transcriptDrawer.style.display = isHidden ? 'block' : 'none';
+    if (toggleTranscriptBtn) {
+      toggleTranscriptBtn.innerText = isHidden ? '🎙️ Hide Transcript' : '🎙️ View Transcript';
+    }
+  }
+}
+
 // Live Speech Recognition Engine (Web Speech API)
 function startSpeechRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -153,9 +172,20 @@ function startSpeechRecognition() {
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         currentSpeech += event.results[i][0].transcript;
       }
-      if (liveSpeechText && currentSpeech.trim()) {
-        liveSpeechText.innerText = `Speech Stream: "${currentSpeech}"`;
-        // Append live transcript to background feed
+      if (currentSpeech.trim()) {
+        if (liveSpeechText) liveSpeechText.innerText = `Speech: "${currentSpeech}"`;
+        
+        // Append live line to transcript log drawer
+        if (transcriptLogContent) {
+          const entry = document.createElement('div');
+          entry.style.margin = '4px 0';
+          entry.style.fontSize = '11px';
+          entry.innerHTML = `<span style="color:#10b981; font-weight:700;">[AUDIO]</span> ${currentSpeech}`;
+          transcriptLogContent.appendChild(entry);
+          transcriptLogContent.scrollTop = transcriptLogContent.scrollHeight;
+        }
+
+        // Also append live transcript to background feed
         appendResponseCard('SPEAKER (AUDIO STREAM)', currentSpeech, '#10b981');
       }
     };
@@ -177,6 +207,7 @@ function stopSpeechRecognition() {
     recognition = null;
   }
 }
+
 
 // Quick Chip Assistant Triggers (Image 3)
 document.getElementById('chipAssist')?.addEventListener('click', () => sendFloatingPrompt("Provide an instant assist for the current screen question."));

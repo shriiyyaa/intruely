@@ -110,6 +110,7 @@
     <!-- Top Pill Bar -->
     <div class="floating-top-pill">
       <div class="brand-badge">✈</div>
+      <button class="pill-btn" id="toggleTranscriptBtn">🎙️ View Transcript</button>
       <button class="pill-btn" id="hideFloatingBtn">˅ Hide</button>
       <button class="pill-btn stop" id="stopFloatingBtn">⏹</button>
     </div>
@@ -135,12 +136,21 @@
         </div>
       </div>
 
-      <!-- Live Speech Wave Indicator -->
+      <!-- Live Speech Wave Indicator & Real-Time Audio Transcript Feed -->
       <div class="live-transcript-indicator" id="liveTranscriptIndicator">
         <span class="recording-dot"></span>
         <span id="liveSpeechText">Listening live audio stream...</span>
       </div>
+
+      <!-- Expandable Live Transcript Log Panel -->
+      <div class="transcript-drawer" id="transcriptDrawer" style="display: none;">
+        <div class="drawer-header">LIVE AUDIO SPEECH TRANSCRIPT</div>
+        <div class="drawer-content" id="transcriptLogContent">
+          <div style="font-size:11px; opacity:0.6; font-style:italic;">Speech recognition running... Speak or play meeting audio to view live text transcript here.</div>
+        </div>
+      </div>
     </div>
+
   </div>
 
   <script src="renderer.js"></script>
