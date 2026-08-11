@@ -86,48 +86,89 @@ Core Interview Execution Principles:
       });
     }
 
-    // Fallback list of models in order of priority
-    const models = ['gemini-1.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-pro'];
-    let data = null;
+    // ── PROVIDER CHAIN ──────────────────────────────────────────────────────────
+    // 1. Gemini cascade (gemini-1.5-flash → gemini-2.0-flash-exp → gemini-1.5-pro)
+    // 2. Groq llama3-70b-8192 (OpenAI-compatible) if all Gemini models fail
+    // ────────────────────────────────────────────────────────────────────────────
+    const geminiModels = ['gemini-1.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-pro'];
+    let aiResponseText = null;
     let lastError = null;
 
-    for (const model of models) {
+    // ── Step 1: Try Gemini ────────────────────────────────────────────────────
+    for (const model of geminiModels) {
       try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
+        );
         const resData = await response.json();
-        if (resData.candidates && resData.candidates[0]?.content?.parts[0]?.text) {
-          data = resData;
+        if (resData.candidates?.[0]?.content?.parts?.[0]?.text) {
+          aiResponseText = resData.candidates[0].content.parts[0].text;
+          console.log(`[AI] Gemini (${model}) responded OK`);
           break;
         } else if (resData.error) {
           lastError = resData.error.message;
+          console.warn(`[AI] Gemini (${model}) error: ${lastError}`);
         }
       } catch (e) {
         lastError = e.message;
+        console.warn(`[AI] Gemini (${model}) threw: ${lastError}`);
       }
     }
 
+    // ── Step 2: Groq fallback (only if Gemini fully exhausted) ───────────────
+    if (!aiResponseText) {
+      const groqKey = process.env.GROQ_API_KEY;
+      if (groqKey) {
+        try {
+          console.log('[AI] Falling back to Groq llama3-70b-8192...');
+          const groqPayload = {
+            model: 'llama3-70b-8192',
+            messages: [
+              { role: 'system', content: systemContext },
+              { role: 'user',   content: prompt || 'Analyze the attached image and provide the immediate answer.' }
+            ],
+            temperature: 0.2,
+            max_tokens: 2048
+          };
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${groqKey}`
+            },
+            body: JSON.stringify(groqPayload)
+          });
+          const groqData = await groqRes.json();
+          if (groqData.choices?.[0]?.message?.content) {
+            aiResponseText = groqData.choices[0].message.content;
+            console.log('[AI] Groq responded OK');
+          } else {
+            lastError = groqData.error?.message || 'Groq returned empty response';
+            console.warn('[AI] Groq error:', lastError);
+          }
+        } catch (e) {
+          lastError = e.message;
+          console.warn('[AI] Groq threw:', lastError);
+        }
+      } else {
+        console.warn('[AI] GROQ_API_KEY not set — skipping Groq fallback');
+      }
+    }
 
-    if (data?.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-      const aiResponseText = data.candidates[0].content.parts[0].text;
-
-      // Track usage in background DB asynchronously if authenticated
-      if (req.user && req.user.id) {
+    // ── Return result or error ────────────────────────────────────────────────
+    if (aiResponseText) {
+      if (req.user?.id) {
         pool.query(
           'INSERT INTO ai_usage (user_id, request_type, tokens_used) VALUES ($1, $2, $3)',
           [req.user.id, imageBase64 ? 'vision' : 'text', aiResponseText.length]
         ).catch(e => console.error('Usage log error:', e));
       }
-
       return res.json({ response: aiResponseText });
     } else {
-      console.error('Gemini error response:', data, 'Last error:', lastError);
-      const errMsg = data?.error?.message || lastError || 'AI processing failed or rate-limited by upstream provider.';
-      return res.status(500).json({ error: `Gemini API Error: ${errMsg}` });
+      const errMsg = lastError || 'All AI providers failed or rate-limited.';
+      console.error('[AI] All providers exhausted. Last error:', errMsg);
+      return res.status(500).json({ error: `AI Error: ${errMsg}` });
     }
   } catch (err) {
     console.error('AI Proxy Route Error:', err);
