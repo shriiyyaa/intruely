@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, globalShortcut, desktopCapturer } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, desktopCapturer, session } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 
@@ -20,7 +20,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: true
+      webSecurity: false
     }
   });
 
@@ -68,7 +68,16 @@ function setStealthAffinity(enable = true) {
 }
 
 app.whenReady().then(() => {
+  // Allow getDisplayMedia with system audio (loopback)
+  app.commandLine.appendSwitch('enable-features', 'WebRTCPipeWireCapturer');
+
   createWindow();
+
+  // Grant all media permissions automatically (mic + system audio)
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    const allowed = ['media', 'audioCapture', 'desktopCapture', 'screen'];
+    callback(allowed.includes(permission));
+  });
 
   // Register Global Keybinds (Matching Cluely specifications)
   // Ctrl + \ : Hide/Show Intruely Overlay
@@ -157,6 +166,21 @@ ipcMain.handle('get-screen-sources', async () => {
     }));
   } catch (err) {
     console.error('Desktop capturer error:', err);
+    return [];
+  }
+});
+
+// Get audio sources (screen + window) for loopback system audio capture
+ipcMain.handle('get-audio-sources', async () => {
+  try {
+    const sources = await desktopCapturer.getSources({
+      types: ['screen', 'window'],
+      thumbnailSize: { width: 0, height: 0 },
+      fetchWindowIcons: false
+    });
+    return sources.map(s => ({ id: s.id, name: s.name }));
+  } catch (err) {
+    console.error('Audio sources error:', err);
     return [];
   }
 });

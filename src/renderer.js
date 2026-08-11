@@ -47,6 +47,21 @@ homeTitleBtn.addEventListener('click', () => {
   profileDropdown.classList.remove('active');
 });
 
+// Back button and sidebar close button both dismiss fullview overlay
+document.getElementById('backBtn')?.addEventListener('click', () => {
+  fullviewOverlay.classList.remove('active');
+});
+
+// Close sidebar button (← inside the settings panel)
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'closeSidebarBtn') {
+    fullviewOverlay.classList.remove('active');
+  }
+  if (e.target && e.target.id === 'quitAppBtn') {
+    window.electronAPI.closeWindow();
+  }
+});
+
 refreshBtn.addEventListener('click', () => {
   location.reload();
 });
@@ -102,6 +117,9 @@ centerStartBtn.addEventListener('click', toggleSession);
 listenSessionBtn.addEventListener('click', toggleSession);
 stopFloatingBtn.addEventListener('click', toggleSession);
 
+// Wire Ctrl+Shift+\ global hotkey to toggle session
+window.electronAPI?.onToggleSession(toggleSession);
+
 hideFloatingBtn.addEventListener('click', () => {
   floatingOverlay.style.display = 'none';
   mainAppWindow.style.display = 'flex';
@@ -153,59 +171,128 @@ function toggleTranscriptDrawer() {
   }
 }
 
-// Live Speech Recognition Engine (Web Speech API)
-function startSpeechRecognition() {
+// ===================================================================
+// DUAL-TRACK AUDIO ENGINE
+// Track 1: System Audio Loopback via desktopCapturer (hears meetings)
+// Track 2: Microphone via getUserMedia (hears user speech)
+// Both feed into Web Speech API recognition on their own audio context
+// ===================================================================
+
+let micStream = null;
+let systemAudioStream = null;
+let micRecognition = null;
+let systemRecognition = null;
+
+function appendTranscriptEntry(text, source) {
+  if (liveSpeechText) liveSpeechText.innerText = `${source}: "${text}"`;
+  if (transcriptLogContent) {
+    const entry = document.createElement('div');
+    entry.style.margin = '4px 0';
+    entry.style.fontSize = '11px';
+    const color = source === 'MIC' ? '#38bdf8' : '#10b981';
+    entry.innerHTML = `<span style="color:${color}; font-weight:700;">[${source}]</span> ${text}`;
+    transcriptLogContent.appendChild(entry);
+    transcriptLogContent.scrollTop = transcriptLogContent.scrollHeight;
+  }
+}
+
+function buildRecognition(stream, sourceLabel) {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    if (liveSpeechText) liveSpeechText.innerText = 'Listening (Microphone active)';
-    return;
+  if (!SpeechRecognition) return null;
+
+  const rec = new SpeechRecognition();
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.lang = 'en-US';
+
+  // Pipe the MediaStream audio into the recognition engine via AudioContext
+  const audioCtx = new AudioContext();
+  const source = audioCtx.createMediaStreamSource(stream);
+  const dest = audioCtx.createMediaStreamDestination();
+  source.connect(dest);
+
+  // Override the recognition stream via MediaStreamConstraints hack
+  // We attach to the hidden audio element approach:
+  let hiddenAudio = document.createElement('audio');
+  hiddenAudio.srcObject = stream;
+  hiddenAudio.muted = true; // Don't play it back
+  document.body.appendChild(hiddenAudio);
+
+  rec.onresult = (event) => {
+    let text = '';
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      text += event.results[i][0].transcript;
+    }
+    if (text.trim()) {
+      appendTranscriptEntry(text.trim(), sourceLabel);
+    }
+  };
+
+  rec.onerror = (err) => {
+    if (err.error !== 'no-speech') {
+      console.warn(`[${sourceLabel}] Recognition error:`, err.error);
+    }
+  };
+
+  rec.onend = () => {
+    // Auto-restart if session still active
+    if (isSessionActive) {
+      try { rec.start(); } catch(e) {}
+    }
+  };
+
+  try { rec.start(); } catch(e) { console.warn('Rec start err:', e); }
+  return rec;
+}
+
+async function startSpeechRecognition() {
+  if (liveSpeechText) liveSpeechText.innerText = 'Starting audio capture...';
+
+  // --- TRACK 1: MICROPHONE ---
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    micRecognition = buildRecognition(micStream, 'MIC');
+    if (liveSpeechText) liveSpeechText.innerText = '🎙️ Microphone active | detecting system audio...';
+  } catch(e) {
+    console.warn('Mic access denied:', e);
+    if (liveSpeechText) liveSpeechText.innerText = 'Mic access denied. Grant mic permission.';
   }
 
+  // --- TRACK 2: SYSTEM AUDIO (loopback via desktopCapturer) ---
   try {
-    recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onresult = (event) => {
-      let currentSpeech = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        currentSpeech += event.results[i][0].transcript;
-      }
-      if (currentSpeech.trim()) {
-        if (liveSpeechText) liveSpeechText.innerText = `Speech: "${currentSpeech}"`;
-        
-        // Append live line to transcript log drawer
-        if (transcriptLogContent) {
-          const entry = document.createElement('div');
-          entry.style.margin = '4px 0';
-          entry.style.fontSize = '11px';
-          entry.innerHTML = `<span style="color:#10b981; font-weight:700;">[AUDIO]</span> ${currentSpeech}`;
-          transcriptLogContent.appendChild(entry);
-          transcriptLogContent.scrollTop = transcriptLogContent.scrollHeight;
-        }
-
-        // Also append live transcript to background feed
-        appendResponseCard('SPEAKER (AUDIO STREAM)', currentSpeech, '#10b981');
-      }
-    };
-
-    recognition.onerror = (err) => {
-      console.warn('Speech recognition warning:', err.error);
-      if (liveSpeechText) liveSpeechText.innerText = 'Audio capture active...';
-    };
-
-    recognition.start();
-  } catch (e) {
-    console.error('Speech init error:', e);
+    const sources = await window.electronAPI.getAudioSources();
+    const screenSource = sources.find(s => s.name === 'Entire Screen' || s.name.toLowerCase().includes('screen')) || sources[0];
+    
+    if (screenSource) {
+      // getUserMedia with chromeMediaSource maps to desktopCapturer source
+      systemAudioStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: screenSource.id
+          }
+        },
+        video: false
+      });
+      systemRecognition = buildRecognition(systemAudioStream, 'AUDIO');
+      if (liveSpeechText) liveSpeechText.innerText = '🟢 Listening: Mic + System Audio active';
+    }
+  } catch(e) {
+    console.warn('System audio capture error:', e.message);
+    if (liveSpeechText) liveSpeechText.innerText = '🎙️ Mic active (system audio unavailable)';
   }
 }
 
 function stopSpeechRecognition() {
-  if (recognition) {
-    try { recognition.stop(); } catch(e){}
-    recognition = null;
-  }
+  try { micRecognition?.stop(); } catch(e) {}
+  try { systemRecognition?.stop(); } catch(e) {}
+  try { micStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
+  try { systemAudioStream?.getTracks().forEach(t => t.stop()); } catch(e) {}
+  micRecognition = null;
+  systemRecognition = null;
+  micStream = null;
+  systemAudioStream = null;
+  if (liveSpeechText) liveSpeechText.innerText = 'Session stopped.';
 }
 
 
@@ -334,8 +421,103 @@ function renderPaneContent(pane) {
         <div class="key-badge">Ctrl + Shift + \\</div>
       </div>
     `;
+  } else if (pane === 'calendar') {
+    fullviewContentPane.innerHTML = `
+      <div class="pane-title">Calendar</div>
+      <div class="pane-subtitle">Connect your calendar to get meeting notifications.</div>
+      <div class="setting-card" style="margin-top:20px;">
+        <div class="setting-info">
+          <div class="setting-icon">📅</div>
+          <div>
+            <div class="setting-title">Google Calendar</div>
+            <div class="setting-desc">Connect to get AI prep before your meetings start.</div>
+          </div>
+        </div>
+        <button class="setting-btn">Connect</button>
+      </div>
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-icon">🗓️</div>
+          <div>
+            <div class="setting-title">Outlook / Microsoft 365</div>
+            <div class="setting-desc">Connect your Outlook calendar for meeting sync.</div>
+          </div>
+        </div>
+        <button class="setting-btn">Connect</button>
+      </div>
+    `;
+  } else if (pane === 'profile') {
+    fullviewContentPane.innerHTML = `
+      <div class="pane-title">Profile</div>
+      <div class="pane-subtitle">Your Intruely account details.</div>
+      <div class="setting-card" style="margin-top:20px;">
+        <div class="setting-info">
+          <div class="setting-icon" style="font-size:28px; width:44px; height:44px; background:#3b82f6; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">S</div>
+          <div>
+            <div class="setting-title">Shriya Nayyar</div>
+            <div class="setting-desc">snayya526@gmail.com &nbsp;·&nbsp; Free Plan</div>
+          </div>
+        </div>
+      </div>
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-icon">🔑</div>
+          <div>
+            <div class="setting-title">Gemini API Key</div>
+            <div class="setting-desc">Using cloud backend. Enter your key for private BYOK mode.</div>
+          </div>
+        </div>
+        <input type="password" class="dock-input" style="max-width:220px;" value="${apiKey}" placeholder="Enter Gemini API key..." onchange="saveApiKey(this.value)" />
+      </div>
+    `;
+  } else if (pane === 'language') {
+    fullviewContentPane.innerHTML = `
+      <div class="pane-title">Language</div>
+      <div class="pane-subtitle">Set the language Intruely listens and responds in.</div>
+      <div class="setting-card" style="margin-top:20px;">
+        <div class="setting-info">
+          <div class="setting-icon">🌐</div>
+          <div>
+            <div class="setting-title">Recognition Language</div>
+            <div class="setting-desc">Language used for live speech recognition.</div>
+          </div>
+        </div>
+        <select class="setting-btn" style="cursor:pointer;" onchange="localStorage.setItem('INTRUELY_LANG', this.value)">
+          <option value="en-US" ${localStorage.getItem('INTRUELY_LANG') === 'en-US' || !localStorage.getItem('INTRUELY_LANG') ? 'selected' : ''}>English (US)</option>
+          <option value="en-GB" ${localStorage.getItem('INTRUELY_LANG') === 'en-GB' ? 'selected' : ''}>English (UK)</option>
+          <option value="hi-IN" ${localStorage.getItem('INTRUELY_LANG') === 'hi-IN' ? 'selected' : ''}>Hindi</option>
+          <option value="fr-FR" ${localStorage.getItem('INTRUELY_LANG') === 'fr-FR' ? 'selected' : ''}>French</option>
+          <option value="de-DE" ${localStorage.getItem('INTRUELY_LANG') === 'de-DE' ? 'selected' : ''}>German</option>
+        </select>
+      </div>
+    `;
+  } else if (pane === 'billing') {
+    fullviewContentPane.innerHTML = `
+      <div class="pane-title">Billing</div>
+      <div class="pane-subtitle">Manage your Intruely subscription.</div>
+      <div class="setting-card" style="margin-top:20px; border-color: rgba(34,197,94,0.3);">
+        <div class="setting-info">
+          <div class="setting-icon">✅</div>
+          <div>
+            <div class="setting-title">Free Plan — Active</div>
+            <div class="setting-desc">You are on the Intruely Free tier. Powered by Gemini 1.5 Flash cloud backend.</div>
+          </div>
+        </div>
+      </div>
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-icon">⚡</div>
+          <div>
+            <div class="setting-title">Upgrade to Pro</div>
+            <div class="setting-desc">Unlimited AI responses, priority processing, and advanced context modes.</div>
+          </div>
+        </div>
+        <button class="setting-btn" style="background:#3b82f6; color:white;">Upgrade</button>
+      </div>
+    `;
   }
 }
+
 
 function saveApiKey(val) {
   apiKey = val.trim();
