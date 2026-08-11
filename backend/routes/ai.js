@@ -29,7 +29,9 @@ router.post('/ask', async (req, res) => {
 
     const apiKey = getApiKey();
     if (!apiKey) {
-      return res.status(500).json({ error: 'Backend AI API Key is not configured.' });
+      const availableEnvKeys = Object.keys(process.env).filter(k => k.includes('GEMINI'));
+      console.error('No Gemini API key found in process.env. Found env keys:', availableEnvKeys);
+      return res.status(500).json({ error: `Backend AI API Key is missing. Found env keys: [${availableEnvKeys.join(', ')}]` });
     }
 
     // Build systemic context prompt
@@ -74,12 +76,14 @@ router.post('/ask', async (req, res) => {
       return res.json({ response: aiResponseText });
     } else {
       console.error('Gemini error response:', data);
-      return res.status(500).json({ error: 'AI processing failed or rate-limited by upstream provider.' });
+      const errMsg = data.error?.message || 'AI processing failed or rate-limited by upstream provider.';
+      return res.status(500).json({ error: `Gemini API Error: ${errMsg}` });
     }
   } catch (err) {
     console.error('AI Proxy Route Error:', err);
-    res.status(500).json({ error: 'Failed to connect to AI engine.' });
+    res.status(500).json({ error: `Failed to connect to AI engine: ${err.message}` });
   }
 });
+
 
 module.exports = router;
