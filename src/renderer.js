@@ -214,23 +214,29 @@ function saveModePrompt() {
 // AI Engine Call (Tries Render Production Backend Proxy First, falls back to direct API key)
 async function callAI(userPrompt, imageBase64 = null) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
     const res = await fetch(`${BACKEND_URL}/ai/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({
         prompt: userPrompt,
         imageBase64: imageBase64,
         modePrompt: customPromptMode
       })
     });
+    clearTimeout(timeoutId);
     
     if (res.ok) {
       const data = await res.json();
       if (data.response) return data.response;
     }
   } catch (backendErr) {
-    console.log('Backend proxy unavailable, trying direct API key fallback...', backendErr);
+    console.log('Backend proxy unavailable or timed out, checking direct fallback key...', backendErr);
   }
+
 
   // Fallback: Direct Gemini API Call if BYOK API key configured
   if (!apiKey) {
