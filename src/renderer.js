@@ -121,16 +121,17 @@ stopFloatingBtn?.addEventListener('click', toggleSession);
 window.electronAPI?.onToggleSession(toggleSession);
 
 hideFloatingBtn?.addEventListener('click', () => {
-  // Hide just the floating pill, main window stays visible
   if (floatingOverlay) floatingOverlay.style.display = 'none';
+  if (mainAppWindow) mainAppWindow.style.display = 'flex';
 });
-
 
 function toggleSession() {
   isSessionActive = !isSessionActive;
   if (isSessionActive) {
-    // Show floating pill on top — main window stays visible underneath (answers are visible!)
+    // 1:1 Cluely Behavior: Session starts -> main window hides into sleek top floating pill card!
+    if (mainAppWindow) mainAppWindow.style.display = 'none';
     if (floatingOverlay) floatingOverlay.style.display = 'flex';
+
     if (listenSessionBtn) {
       listenSessionBtn.innerText = '⏹ Stop Session';
       listenSessionBtn.style.background = '#ef4444';
@@ -147,6 +148,8 @@ function toggleSession() {
     startSpeechRecognition();
   } else {
     if (floatingOverlay) floatingOverlay.style.display = 'none';
+    if (mainAppWindow) mainAppWindow.style.display = 'flex';
+
     if (listenSessionBtn) {
       listenSessionBtn.innerText = '▶ Start Session';
       listenSessionBtn.style.background = '#22c55e';
@@ -355,15 +358,35 @@ floatingPromptInput?.addEventListener('keydown', (e) => {
 });
 
 async function sendFloatingPrompt(q) {
-  mainAppWindow.style.display = 'flex';
   const emptyCard = document.getElementById('emptyStateCard');
   if (emptyCard) emptyCard.style.display = 'none';
 
   appendResponseCard('You', q, '#3b82f6');
   const aiCard = appendResponseCard('Intruely AI', 'Thinking...', '#22c55e');
 
+  // Also append to floating drawer content if active
+  if (transcriptLogContent) {
+    const promptEntry = document.createElement('div');
+    promptEntry.style.margin = '6px 0';
+    promptEntry.style.color = '#3b82f6';
+    promptEntry.style.fontWeight = '700';
+    promptEntry.innerHTML = `[YOU]: ${q}`;
+    transcriptLogContent.appendChild(promptEntry);
+  }
+
   const res = await callAI(q);
   updateCardText(aiCard, res);
+
+  if (transcriptLogContent) {
+    const aiEntry = document.createElement('div');
+    aiEntry.style.margin = '6px 0';
+    aiEntry.style.color = '#22c55e';
+    aiEntry.style.fontSize = '12px';
+    aiEntry.style.lineHeight = '1.4';
+    aiEntry.innerHTML = `<span style="font-weight:700;">[INTRUELY AI]:</span><br>${res.replace(/\n/g, '<br>')}`;
+    transcriptLogContent.appendChild(aiEntry);
+    transcriptLogContent.scrollTop = transcriptLogContent.scrollHeight;
+  }
 }
 
 // Render Specific Pane UI

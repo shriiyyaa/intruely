@@ -112,7 +112,7 @@ Core Interview Execution Principles:
     }
 
 
-    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+    if (data?.candidates && data.candidates[0]?.content?.parts[0]?.text) {
       const aiResponseText = data.candidates[0].content.parts[0].text;
 
       // Track usage in background DB asynchronously if authenticated
@@ -125,8 +125,8 @@ Core Interview Execution Principles:
 
       return res.json({ response: aiResponseText });
     } else {
-      console.error('Gemini error response:', data);
-      const errMsg = data.error?.message || 'AI processing failed or rate-limited by upstream provider.';
+      console.error('Gemini error response:', data, 'Last error:', lastError);
+      const errMsg = data?.error?.message || lastError || 'AI processing failed or rate-limited by upstream provider.';
       return res.status(500).json({ error: `Gemini API Error: ${errMsg}` });
     }
   } catch (err) {
