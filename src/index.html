@@ -8,13 +8,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="intruely-window">
+  <div class="intruely-window" id="mainAppWindow">
     <!-- Top Nav Header -->
     <div class="top-header">
       <div class="nav-left">
         <span class="nav-arrow" id="backBtn">←</span>
         <span class="nav-arrow" id="forwardBtn">→</span>
-        <span class="app-title" id="homeTitleBtn">Intruely <span style="font-size:10px; color:#22c55e; opacity:0.8;">FREE</span></span>
+        <span class="app-title" id="homeTitleBtn">Intruely</span>
+        <button class="refresh-btn" id="refreshBtn" title="Refresh session">⟳</button>
         <div class="detectable-pill">
           <span id="stealthLabel">Detectable</span>
           <div class="toggle-switch off" id="stealthToggle">
@@ -28,7 +29,8 @@
         <input type="text" placeholder="Search or ask anything..." id="topSearchInput" />
       </div>
 
-      <div style="display:flex; align-items:center;">
+      <div style="display:flex; align-items:center; gap: 8px;">
+        <button class="hero-start-btn" id="heroStartBtn">✈ Start Intruely</button>
         <div class="user-profile-btn" id="profileBtn">S</div>
         <div class="window-ops">
           <button class="win-btn" id="minimizeBtn">─</button>
@@ -50,29 +52,25 @@
     <!-- Main Content Body -->
     <div class="app-body">
       
-      <!-- Home Sessions Feed View -->
+      <!-- Home Pane (1:1 Match with Cluely Image 2) -->
       <div class="home-pane" id="homePane">
-        <a href="#" class="meeting-header-link" id="linkCalendarBtn">Link your calendar to get notifications for upcoming meetings.</a>
+        <a href="#" class="meeting-header-link" id="linkCalendarBtn"><span style="color:#38bdf8;">Link your calendar</span> to get notifications for upcoming meetings.</a>
         
-        <div style="font-size: 11px; color: #9da3ae; margin-bottom: 12px; font-weight: 600;">PREVIOUS SESSIONS & RECAPS</div>
-
-        <div id="sessionsList">
-          <div class="session-row">
-            <div>
-              <div style="font-size: 14px; font-weight: 600;" id="activeModeDisplayTitle">General AI Session</div>
-              <div style="font-size: 11px; color: #9da3ae;">Real-time context mode active</div>
-            </div>
-            <div style="font-size: 12px; color: #9da3ae;">Live | Active</div>
-          </div>
+        <!-- Onboarding Empty State Card (Matches Image 2) -->
+        <div class="empty-state-card" id="emptyStateCard">
+          <div class="monitor-icon">🖥️</div>
+          <h2>Start your first session</h2>
+          <p>Intruely provides live AI help during your conversation and generates searchable summaries afterwards.</p>
+          <button class="center-start-btn" id="centerStartBtn">Start Intruely</button>
         </div>
 
-
-        <div id="aiResponseFeed" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-          <!-- Realtime AI cards rendered here -->
+        <!-- Live Audio Speech Transcript & AI Cards Feed -->
+        <div id="aiResponseFeed" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+          <!-- Live transcript stream & cards go here -->
         </div>
       </div>
 
-      <!-- Settings & Modes Overlay Screen (Matches Image 1, 2, 3, 5) -->
+      <!-- Settings & Modes Overlay Screen -->
       <div class="fullview-overlay" id="fullviewOverlay">
         <div class="sidebar-nav">
           <div class="nav-group">
@@ -104,6 +102,44 @@
       <button class="setting-btn" id="listenSessionBtn" style="background:#22c55e; color:black; font-weight:700;">▶ Start Session</button>
       <input type="text" class="dock-input" id="dockPromptInput" placeholder="Ask Intruely about your screen or audio (Ctrl + Enter)..." />
       <button class="setting-btn" id="dockSnapBtn">📷 Screen Snap</button>
+    </div>
+  </div>
+
+  <!-- FLOATING ACTIVE SESSION CONTROLLER & DOCK (Matches Image 3 1:1) -->
+  <div class="floating-session-overlay" id="floatingOverlay" style="display: none;">
+    <!-- Top Pill Bar -->
+    <div class="floating-top-pill">
+      <div class="brand-badge">✈</div>
+      <button class="pill-btn" id="hideFloatingBtn">˅ Hide</button>
+      <button class="pill-btn stop" id="stopFloatingBtn">⏹</button>
+    </div>
+
+    <!-- Floating Dock Assistant Bar -->
+    <div class="floating-dock-card">
+      <div class="quick-chips-row">
+        <span class="chip-item" id="chipAssist">✨ Assist</span>
+        <span class="chip-dot">·</span>
+        <span class="chip-item" id="chipSay">🪄 What should I say?</span>
+        <span class="chip-dot">·</span>
+        <span class="chip-item" id="chipFollowup">💬 Follow-up questions</span>
+        <span class="chip-dot">·</span>
+        <span class="chip-item" id="chipRecap">🔄 Recap</span>
+      </div>
+
+      <div class="floating-input-box">
+        <input type="text" id="floatingPromptInput" placeholder="Ask about your screen or conversation, or Ctrl ↵ for Assist" />
+        <div class="input-actions">
+          <span class="mode-tag">Smart</span>
+          <span class="more-dots">...</span>
+          <button class="send-btn" id="floatingSendBtn">➔</button>
+        </div>
+      </div>
+
+      <!-- Live Speech Wave Indicator -->
+      <div class="live-transcript-indicator" id="liveTranscriptIndicator">
+        <span class="recording-dot"></span>
+        <span id="liveSpeechText">Listening live audio stream...</span>
+      </div>
     </div>
   </div>
 

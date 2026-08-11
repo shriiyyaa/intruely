@@ -1,7 +1,7 @@
 // Render Production Backend API Endpoint
 const BACKEND_URL = 'https://intruely.onrender.com';
 
-// DOM Elements
+// DOM & State Elements
 let activePane = 'general';
 let isStealthActive = false;
 let isSessionActive = false;
@@ -11,7 +11,7 @@ Comprehensive interview-prep reference for Shriya Nayyar covering background, wo
 
 let apiKey = localStorage.getItem('GEMINI_API_KEY') || '';
 
-// DOM Elements
+// Primary DOM Elements
 const profileBtn = document.getElementById('profileBtn');
 const profileDropdown = document.getElementById('profileDropdown');
 const fullviewOverlay = document.getElementById('fullviewOverlay');
@@ -25,14 +25,30 @@ const listenSessionBtn = document.getElementById('listenSessionBtn');
 const aiResponseFeed = document.getElementById('aiResponseFeed');
 const minimizeBtn = document.getElementById('minimizeBtn');
 const closeBtn = document.getElementById('closeBtn');
+const heroStartBtn = document.getElementById('heroStartBtn');
+const centerStartBtn = document.getElementById('centerStartBtn');
+const refreshBtn = document.getElementById('refreshBtn');
 
-// Window Handlers
+// Floating Overlay Elements (Image 3)
+const mainAppWindow = document.getElementById('mainAppWindow');
+const floatingOverlay = document.getElementById('floatingOverlay');
+const hideFloatingBtn = document.getElementById('hideFloatingBtn');
+const stopFloatingBtn = document.getElementById('stopFloatingBtn');
+const floatingPromptInput = document.getElementById('floatingPromptInput');
+const floatingSendBtn = document.getElementById('floatingSendBtn');
+const liveSpeechText = document.getElementById('liveSpeechText');
+
+// Window Operation Handlers
 minimizeBtn.addEventListener('click', () => window.electronAPI.minimizeWindow());
 closeBtn.addEventListener('click', () => window.electronAPI.closeWindow());
 
 homeTitleBtn.addEventListener('click', () => {
   fullviewOverlay.classList.remove('active');
   profileDropdown.classList.remove('active');
+});
+
+refreshBtn.addEventListener('click', () => {
+  location.reload();
 });
 
 // Profile Dropdown Toggle
@@ -53,7 +69,7 @@ document.getElementById('settingsMenuItem').addEventListener('click', () => {
   openFullview('general');
 });
 
-// Stealth Switch Toggle (Matches Image 1 & Image 4)
+// Stealth Switch Toggle
 stealthToggle.addEventListener('click', () => {
   isStealthActive = !isStealthActive;
   stealthToggle.classList.toggle('off', !isStealthActive);
@@ -80,7 +96,121 @@ function openFullview(paneName) {
   renderPaneContent(paneName);
 }
 
-// Render Specific Pane UI (Exact Cluely Design Match)
+// Session Controller Logic — Transforms between Main Window and Floating Pill (Image 3)
+heroStartBtn.addEventListener('click', toggleSession);
+centerStartBtn.addEventListener('click', toggleSession);
+listenSessionBtn.addEventListener('click', toggleSession);
+stopFloatingBtn.addEventListener('click', toggleSession);
+
+hideFloatingBtn.addEventListener('click', () => {
+  floatingOverlay.style.display = 'none';
+  mainAppWindow.style.display = 'flex';
+});
+
+function toggleSession() {
+  isSessionActive = !isSessionActive;
+  if (isSessionActive) {
+    mainAppWindow.style.display = 'none';
+    floatingOverlay.style.display = 'flex';
+    listenSessionBtn.innerText = '⏹ Stop Session';
+    listenSessionBtn.style.background = '#ef4444';
+    heroStartBtn.innerText = '⏹ Stop Session';
+    heroStartBtn.style.background = '#ef4444';
+    
+    // Hide onboarding card once session begins
+    const emptyCard = document.getElementById('emptyStateCard');
+    if (emptyCard) emptyCard.style.display = 'none';
+
+    startSpeechRecognition();
+  } else {
+    floatingOverlay.style.display = 'none';
+    mainAppWindow.style.display = 'flex';
+    listenSessionBtn.innerText = '▶ Start Session';
+    listenSessionBtn.style.background = '#22c55e';
+    heroStartBtn.innerText = '✈ Start Intruely';
+    heroStartBtn.style.background = '#3b82f6';
+
+    stopSpeechRecognition();
+  }
+}
+
+// Live Speech Recognition Engine (Web Speech API)
+function startSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    if (liveSpeechText) liveSpeechText.innerText = 'Listening (Microphone active)';
+    return;
+  }
+
+  try {
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      let currentSpeech = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        currentSpeech += event.results[i][0].transcript;
+      }
+      if (liveSpeechText && currentSpeech.trim()) {
+        liveSpeechText.innerText = `Speech Stream: "${currentSpeech}"`;
+        // Append live transcript to background feed
+        appendResponseCard('SPEAKER (AUDIO STREAM)', currentSpeech, '#10b981');
+      }
+    };
+
+    recognition.onerror = (err) => {
+      console.warn('Speech recognition warning:', err.error);
+      if (liveSpeechText) liveSpeechText.innerText = 'Audio capture active...';
+    };
+
+    recognition.start();
+  } catch (e) {
+    console.error('Speech init error:', e);
+  }
+}
+
+function stopSpeechRecognition() {
+  if (recognition) {
+    try { recognition.stop(); } catch(e){}
+    recognition = null;
+  }
+}
+
+// Quick Chip Assistant Triggers (Image 3)
+document.getElementById('chipAssist')?.addEventListener('click', () => sendFloatingPrompt("Provide an instant assist for the current screen question."));
+document.getElementById('chipSay')?.addEventListener('click', () => sendFloatingPrompt("What optimal response should I say right now?"));
+document.getElementById('chipFollowup')?.addEventListener('click', () => sendFloatingPrompt("Suggest 3 intelligent follow-up questions to ask."));
+document.getElementById('chipRecap')?.addEventListener('click', () => sendFloatingPrompt("Provide a concise summary recap of the discussion so far."));
+
+floatingSendBtn.addEventListener('click', () => {
+  if (floatingPromptInput.value.trim()) {
+    sendFloatingPrompt(floatingPromptInput.value.trim());
+    floatingPromptInput.value = '';
+  }
+});
+
+floatingPromptInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && floatingPromptInput.value.trim()) {
+    sendFloatingPrompt(floatingPromptInput.value.trim());
+    floatingPromptInput.value = '';
+  }
+});
+
+async function sendFloatingPrompt(q) {
+  mainAppWindow.style.display = 'flex';
+  const emptyCard = document.getElementById('emptyStateCard');
+  if (emptyCard) emptyCard.style.display = 'none';
+
+  appendResponseCard('You', q, '#3b82f6');
+  const aiCard = appendResponseCard('Intruely AI', 'Thinking...', '#22c55e');
+
+  const res = await callAI(q);
+  updateCardText(aiCard, res);
+}
+
+// Render Specific Pane UI
 function renderPaneContent(pane) {
   if (pane === 'general') {
     fullviewContentPane.innerHTML = `
@@ -173,27 +303,6 @@ function renderPaneContent(pane) {
         <div class="key-badge">Ctrl + Shift + \\</div>
       </div>
     `;
-  } else if (pane === 'language') {
-    fullviewContentPane.innerHTML = `
-      <div class="pane-title">Language</div>
-      <div class="pane-subtitle">Select the language you want to use for your meetings.</div>
-
-      <div class="setting-card">
-        <div>
-          <div class="setting-title">Transcription language</div>
-          <div class="setting-desc">Select the language you speak in meetings.</div>
-        </div>
-        <select class="setting-btn"><option>English (recommended)</option></select>
-      </div>
-
-      <div class="setting-card">
-        <div>
-          <div class="setting-title">Output language</div>
-          <div class="setting-desc">Your preferred language for AI and meeting notes.</div>
-        </div>
-        <select class="setting-btn"><option>English</option></select>
-      </div>
-    `;
   }
 }
 
@@ -211,7 +320,7 @@ function saveModePrompt() {
   }
 }
 
-// AI Engine Call (Tries Render Production Backend Proxy First, falls back to direct API key)
+// AI Engine Call
 async function callAI(userPrompt, imageBase64 = null) {
   try {
     const controller = new AbortController();
@@ -234,22 +343,15 @@ async function callAI(userPrompt, imageBase64 = null) {
       if (data.response) return data.response;
     } else {
       const errData = await res.json().catch(() => ({}));
-      console.log('Backend proxy returned error:', res.status, errData);
-      if (errData.error) {
-        return `⚠️ Backend Error (${res.status}): ${errData.error}`;
-      }
+      if (errData.error) return `⚠️ Backend Error (${res.status}): ${errData.error}`;
     }
   } catch (backendErr) {
     console.log('Backend proxy network error or timeout:', backendErr);
   }
 
-
-
-  // Fallback: Direct Gemini API Call if BYOK API key configured
   if (!apiKey) {
     return "⚡ Free Cloud Backend is warming up on Render (free tier cold-start)! Please try again in 15 seconds, or add your free Gemini API key in Profile -> Settings for zero-wait responses.";
   }
-
 
   try {
     const fullPrompt = `System Context Mode:\n${customPromptMode}\n\nUser Question/Screen Request: ${userPrompt}\nGive a direct, optimal answer tailored to the mode instructions above.`;
@@ -269,7 +371,7 @@ async function callAI(userPrompt, imageBase64 = null) {
       });
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -285,12 +387,15 @@ async function callAI(userPrompt, imageBase64 = null) {
   }
 }
 
-// Interactive Dock Inputs
-dockPromptInput.addEventListener('keydown', async (e) => {
+// Dock Handlers
+dockPromptInput?.addEventListener('keydown', async (e) => {
   if (e.key === 'Enter' && dockPromptInput.value.trim()) {
     const q = dockPromptInput.value.trim();
     dockPromptInput.value = '';
     
+    const emptyCard = document.getElementById('emptyStateCard');
+    if (emptyCard) emptyCard.style.display = 'none';
+
     appendResponseCard('You', q, '#3b82f6');
     const aiCard = appendResponseCard('Intruely AI', 'Thinking...', '#22c55e');
 
@@ -299,9 +404,9 @@ dockPromptInput.addEventListener('keydown', async (e) => {
   }
 });
 
-dockSnapBtn.addEventListener('click', triggerScreenSnap);
-window.electronAPI.onTriggerScreenCapture(triggerScreenSnap);
-window.electronAPI.onScrollWindow((deltaY) => {
+dockSnapBtn?.addEventListener('click', triggerScreenSnap);
+window.electronAPI?.onTriggerScreenCapture(triggerScreenSnap);
+window.electronAPI?.onScrollWindow((deltaY) => {
   const container = document.getElementById('homePane') || document.getElementById('aiResponseFeed');
   if (container) {
     container.scrollBy({ top: deltaY, behavior: 'smooth' });
@@ -309,6 +414,9 @@ window.electronAPI.onScrollWindow((deltaY) => {
 });
 
 async function triggerScreenSnap() {
+  const emptyCard = document.getElementById('emptyStateCard');
+  if (emptyCard) emptyCard.style.display = 'none';
+
   const aiCard = appendResponseCard('Intruely Vision', 'Analyzing screen snippet...', '#a855f7');
   try {
     const sources = await window.electronAPI.getScreenSources();
@@ -333,7 +441,8 @@ function appendResponseCard(author, text, color = '#22c55e') {
     <div class="card-text" style="font-size:13px; line-height:1.5;">${text.replace(/\n/g, '<br>')}</div>
   `;
   aiResponseFeed.appendChild(card);
-  homePane.scrollTop = homePane.scrollHeight;
+  const homePane = document.getElementById('homePane');
+  if (homePane) homePane.scrollTop = homePane.scrollHeight;
   return card;
 }
 
