@@ -80,8 +80,16 @@ app.whenReady().then(() => {
   });
 
   // Register Global Keybinds (Matching Cluely specifications)
+  const safeRegister = (accelerator, callback) => {
+    try {
+      globalShortcut.register(accelerator, callback);
+    } catch (e) {
+      console.warn(`Keybind registration warning for ${accelerator}:`, e.message);
+    }
+  };
+
   // Ctrl + \ : Hide/Show Intruely Overlay
-  globalShortcut.register('CommandOrControl+\\', () => {
+  safeRegister('CommandOrControl+\\', () => {
     if (!mainWindow) return;
     if (mainWindow.isVisible()) {
       mainWindow.hide();
@@ -92,38 +100,38 @@ app.whenReady().then(() => {
   });
 
   // Ctrl + Shift + \ : Start/Stop Session
-  globalShortcut.register('CommandOrControl+Shift+\\', () => {
+  safeRegister('CommandOrControl+Shift+\\', () => {
     if (mainWindow) mainWindow.webContents.send('toggle-session-hotkey');
   });
 
   // Ctrl + Enter : Instant Screen Vision Question Solver
-  globalShortcut.register('CommandOrControl+Return', () => {
+  safeRegister('CommandOrControl+Return', () => {
     if (mainWindow) mainWindow.webContents.send('trigger-screen-capture');
   });
 
   // Window Position Adjustment (Ctrl + Arrows)
-  globalShortcut.register('CommandOrControl+Up', () => {
+  safeRegister('CommandOrControl+Up', () => {
     if (mainWindow) {
       const [x, y] = mainWindow.getPosition();
       mainWindow.setPosition(x, Math.max(0, y - 40));
     }
   });
 
-  globalShortcut.register('CommandOrControl+Down', () => {
+  safeRegister('CommandOrControl+Down', () => {
     if (mainWindow) {
       const [x, y] = mainWindow.getPosition();
       mainWindow.setPosition(x, y + 40);
     }
   });
 
-  globalShortcut.register('CommandOrControl+Left', () => {
+  safeRegister('CommandOrControl+Left', () => {
     if (mainWindow) {
       const [x, y] = mainWindow.getPosition();
       mainWindow.setPosition(Math.max(0, x - 40), y);
     }
   });
 
-  globalShortcut.register('CommandOrControl+Right', () => {
+  safeRegister('CommandOrControl+Right', () => {
     if (mainWindow) {
       const [x, y] = mainWindow.getPosition();
       mainWindow.setPosition(x + 40, y);
@@ -131,11 +139,11 @@ app.whenReady().then(() => {
   });
 
   // Response Panel Scroll (Ctrl + Shift + Arrows)
-  globalShortcut.register('CommandOrControl+Shift+Up', () => {
+  safeRegister('CommandOrControl+Shift+Up', () => {
     if (mainWindow) mainWindow.webContents.send('scroll-window', -160);
   });
 
-  globalShortcut.register('CommandOrControl+Shift+Down', () => {
+  safeRegister('CommandOrControl+Shift+Down', () => {
     if (mainWindow) mainWindow.webContents.send('scroll-window', 160);
   });
 
