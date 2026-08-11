@@ -39,57 +39,57 @@ const floatingSendBtn = document.getElementById('floatingSendBtn');
 const liveSpeechText = document.getElementById('liveSpeechText');
 
 // Window Operation Handlers
-minimizeBtn.addEventListener('click', () => window.electronAPI.minimizeWindow());
-closeBtn.addEventListener('click', () => window.electronAPI.closeWindow());
+minimizeBtn?.addEventListener('click', () => window.electronAPI?.minimizeWindow());
+closeBtn?.addEventListener('click', () => window.electronAPI?.closeWindow());
 
-homeTitleBtn.addEventListener('click', () => {
-  fullviewOverlay.classList.remove('active');
-  profileDropdown.classList.remove('active');
+homeTitleBtn?.addEventListener('click', () => {
+  fullviewOverlay?.classList.remove('active');
+  profileDropdown?.classList.remove('active');
 });
 
 // Back button and sidebar close button both dismiss fullview overlay
 document.getElementById('backBtn')?.addEventListener('click', () => {
-  fullviewOverlay.classList.remove('active');
+  fullviewOverlay?.classList.remove('active');
 });
 
 // Close sidebar button (← inside the settings panel)
 document.addEventListener('click', (e) => {
   if (e.target && e.target.id === 'closeSidebarBtn') {
-    fullviewOverlay.classList.remove('active');
+    fullviewOverlay?.classList.remove('active');
   }
   if (e.target && e.target.id === 'quitAppBtn') {
-    window.electronAPI.closeWindow();
+    window.electronAPI?.closeWindow();
   }
 });
 
-refreshBtn.addEventListener('click', () => {
+refreshBtn?.addEventListener('click', () => {
   location.reload();
 });
 
 // Profile Dropdown Toggle
-profileBtn.addEventListener('click', (e) => {
+profileBtn?.addEventListener('click', (e) => {
   e.stopPropagation();
-  profileDropdown.classList.toggle('active');
+  profileDropdown?.classList.toggle('active');
 });
 
 document.addEventListener('click', () => {
-  profileDropdown.classList.remove('active');
+  profileDropdown?.classList.remove('active');
 });
 
-document.getElementById('manageModesMenuItem').addEventListener('click', () => {
+document.getElementById('manageModesMenuItem')?.addEventListener('click', () => {
   openFullview('modes');
 });
 
-document.getElementById('settingsMenuItem').addEventListener('click', () => {
+document.getElementById('settingsMenuItem')?.addEventListener('click', () => {
   openFullview('general');
 });
 
 // Stealth Switch Toggle
-stealthToggle.addEventListener('click', () => {
+stealthToggle?.addEventListener('click', () => {
   isStealthActive = !isStealthActive;
   stealthToggle.classList.toggle('off', !isStealthActive);
-  stealthLabel.innerText = isStealthActive ? 'Stealth Active' : 'Detectable';
-  window.electronAPI.toggleStealth(isStealthActive);
+  if (stealthLabel) stealthLabel.innerText = isStealthActive ? 'Stealth Active' : 'Detectable';
+  window.electronAPI?.toggleStealth(isStealthActive);
 });
 
 // Sidebar Navigation Pane Switcher
@@ -106,23 +106,23 @@ document.querySelectorAll('.nav-item').forEach(item => {
 
 function openFullview(paneName) {
   activePane = paneName;
-  fullviewOverlay.classList.add('active');
-  profileDropdown.classList.remove('active');
+  fullviewOverlay?.classList.add('active');
+  profileDropdown?.classList.remove('active');
   renderPaneContent(paneName);
 }
 
 // Session Controller Logic — Transforms between Main Window and Floating Pill (Image 3)
-heroStartBtn.addEventListener('click', toggleSession);
-centerStartBtn.addEventListener('click', toggleSession);
-listenSessionBtn.addEventListener('click', toggleSession);
-stopFloatingBtn.addEventListener('click', toggleSession);
+heroStartBtn?.addEventListener('click', toggleSession);
+centerStartBtn?.addEventListener('click', toggleSession);
+listenSessionBtn?.addEventListener('click', toggleSession);
+stopFloatingBtn?.addEventListener('click', toggleSession);
 
 // Wire Ctrl+Shift+\ global hotkey to toggle session
 window.electronAPI?.onToggleSession(toggleSession);
 
-hideFloatingBtn.addEventListener('click', () => {
+hideFloatingBtn?.addEventListener('click', () => {
   // Hide just the floating pill, main window stays visible
-  floatingOverlay.style.display = 'none';
+  if (floatingOverlay) floatingOverlay.style.display = 'none';
 });
 
 
@@ -130,11 +130,15 @@ function toggleSession() {
   isSessionActive = !isSessionActive;
   if (isSessionActive) {
     // Show floating pill on top — main window stays visible underneath (answers are visible!)
-    floatingOverlay.style.display = 'flex';
-    listenSessionBtn.innerText = '⏹ Stop Session';
-    listenSessionBtn.style.background = '#ef4444';
-    heroStartBtn.innerText = '⏹ Stop';
-    heroStartBtn.style.background = '#ef4444';
+    if (floatingOverlay) floatingOverlay.style.display = 'flex';
+    if (listenSessionBtn) {
+      listenSessionBtn.innerText = '⏹ Stop Session';
+      listenSessionBtn.style.background = '#ef4444';
+    }
+    if (heroStartBtn) {
+      heroStartBtn.innerText = '⏹ Stop';
+      heroStartBtn.style.background = '#ef4444';
+    }
 
     // Hide onboarding card once session begins
     const emptyCard = document.getElementById('emptyStateCard');
@@ -142,11 +146,15 @@ function toggleSession() {
 
     startSpeechRecognition();
   } else {
-    floatingOverlay.style.display = 'none';
-    listenSessionBtn.innerText = '▶ Start Session';
-    listenSessionBtn.style.background = '#22c55e';
-    heroStartBtn.innerText = '✈ Start Intruely';
-    heroStartBtn.style.background = '#3b82f6';
+    if (floatingOverlay) floatingOverlay.style.display = 'none';
+    if (listenSessionBtn) {
+      listenSessionBtn.innerText = '▶ Start Session';
+      listenSessionBtn.style.background = '#22c55e';
+    }
+    if (heroStartBtn) {
+      heroStartBtn.innerText = '✈ Start Intruely';
+      heroStartBtn.style.background = '#3b82f6';
+    }
 
     stopSpeechRecognition();
   }
@@ -321,15 +329,15 @@ document.getElementById('chipSay')?.addEventListener('click', () => sendFloating
 document.getElementById('chipFollowup')?.addEventListener('click', () => sendFloatingPrompt("Suggest 3 intelligent follow-up questions to ask."));
 document.getElementById('chipRecap')?.addEventListener('click', () => sendFloatingPrompt("Provide a concise summary recap of the discussion so far."));
 
-floatingSendBtn.addEventListener('click', () => {
-  if (floatingPromptInput.value.trim()) {
+floatingSendBtn?.addEventListener('click', () => {
+  if (floatingPromptInput && floatingPromptInput.value.trim()) {
     sendFloatingPrompt(floatingPromptInput.value.trim());
     floatingPromptInput.value = '';
   }
 });
 
-floatingPromptInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && floatingPromptInput.value.trim()) {
+floatingPromptInput?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && floatingPromptInput && floatingPromptInput.value.trim()) {
     sendFloatingPrompt(floatingPromptInput.value.trim());
     floatingPromptInput.value = '';
   }
