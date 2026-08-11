@@ -645,17 +645,17 @@ async function callAI(userPrompt, imageBase64 = null) {
       });
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
 
     const data = await response.json();
-    if (data.candidates && data.candidates[0].content.parts[0].text) {
+    if (data?.candidates && data.candidates[0]?.content?.parts[0]?.text) {
       return data.candidates[0].content.parts[0].text;
     }
-    return "No response generated.";
+    return `No response generated: ${data?.error?.message || 'API rate limited.'}`;
   } catch (err) {
     return `Error connecting to AI: ${err.message}`;
   }
@@ -714,9 +714,10 @@ function appendResponseCard(author, text, color = '#22c55e') {
     <div style="font-size:11px; color:${color}; font-weight:700; margin-bottom:6px;">${author.toUpperCase()}</div>
     <div class="card-text" style="font-size:13px; line-height:1.5;">${text.replace(/\n/g, '<br>')}</div>
   `;
-  aiResponseFeed.appendChild(card);
-  const homePane = document.getElementById('homePane');
-  if (homePane) homePane.scrollTop = homePane.scrollHeight;
+  if (aiResponseFeed) {
+    aiResponseFeed.appendChild(card);
+    aiResponseFeed.scrollTop = aiResponseFeed.scrollHeight;
+  }
   return card;
 }
 
