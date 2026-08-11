@@ -52,11 +52,11 @@
     <!-- Main Content Body -->
     <div class="app-body">
       
-      <!-- Home Pane (1:1 Match with Cluely Image 2) -->
-      <div class="home-pane" id="homePane">
+      <!-- Home Pane Split Layout (Left: Live Transcript Stream, Right: AI Q&A Feed) -->
+      <div class="home-pane" id="homePane" style="padding: 12px;">
         <a href="#" class="meeting-header-link" id="linkCalendarBtn"><span style="color:#38bdf8;">Link your calendar</span> to get notifications for upcoming meetings.</a>
         
-        <!-- Onboarding Empty State Card (Matches Image 2) -->
+        <!-- Onboarding Empty State Card -->
         <div class="empty-state-card" id="emptyStateCard">
           <div class="monitor-icon">🖥️</div>
           <h2>Start your first session</h2>
@@ -64,9 +64,28 @@
           <button class="center-start-btn" id="centerStartBtn">Start Intruely</button>
         </div>
 
-        <!-- Live Audio Speech Transcript & AI Cards Feed -->
-        <div id="aiResponseFeed" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
-          <!-- Live transcript stream & cards go here -->
+        <!-- 2-COLUMN SPLIT CONTAINER -->
+        <div class="split-view-container" id="splitViewContainer">
+          <!-- LEFT COLUMN: VERTICAL RECTANGLE FOR LIVE TRANSCRIPT STREAM -->
+          <div class="transcript-vertical-column">
+            <div class="column-header">
+              <span>🎙️ LIVE AUDIO TRANSCRIPT</span>
+              <span class="live-status-dot" id="splitLiveStatus"></span>
+            </div>
+            <div class="transcript-stream-box" id="splitTranscriptBox">
+              <div class="transcript-placeholder" id="transcriptPlaceholder">Audio stream waiting... Click "▶ Start Session" or press Ctrl+Shift+\ to listen.</div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: SQUARE FEED FOR QUESTIONS & OPTIMAL AI ANSWERS -->
+          <div class="qa-feed-column">
+            <div class="column-header">
+              <span>✨ AI ANSWERS & INTERVIEW COPILOT</span>
+            </div>
+            <div id="aiResponseFeed" class="qa-response-feed">
+              <!-- AI Cards, STAR answers, C++/Python code snippets inserted here -->
+            </div>
+          </div>
         </div>
       </div>
 

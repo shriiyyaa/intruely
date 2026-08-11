@@ -185,6 +185,25 @@ let systemRecognition = null;
 
 function appendTranscriptEntry(text, source) {
   if (liveSpeechText) liveSpeechText.innerText = `${source}: "${text}"`;
+
+  const splitBox = document.getElementById('splitTranscriptBox');
+  const placeholder = document.getElementById('transcriptPlaceholder');
+  if (placeholder) placeholder.style.display = 'none';
+
+  if (splitBox) {
+    const entry = document.createElement('div');
+    entry.style.margin = '6px 0';
+    entry.style.padding = '6px 8px';
+    entry.style.background = 'rgba(255, 255, 255, 0.03)';
+    entry.style.borderLeft = source === 'MIC' ? '3px solid #38bdf8' : '3px solid #10b981';
+    entry.style.borderRadius = '4px';
+    entry.style.fontSize = '12px';
+    const color = source === 'MIC' ? '#38bdf8' : '#10b981';
+    entry.innerHTML = `<span style="color:${color}; font-weight:700;">[${source}]</span> ${text}`;
+    splitBox.appendChild(entry);
+    splitBox.scrollTop = splitBox.scrollHeight;
+  }
+
   if (transcriptLogContent) {
     const entry = document.createElement('div');
     entry.style.margin = '4px 0';

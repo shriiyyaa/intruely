@@ -26,8 +26,8 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
-  // Default to Stealth Mode on launch
-  setStealthAffinity(true);
+  // Default to non-stealth on launch so window never gets hidden unexpectedly
+  setStealthAffinity(false);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
