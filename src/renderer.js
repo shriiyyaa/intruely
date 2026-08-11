@@ -121,20 +121,21 @@ stopFloatingBtn.addEventListener('click', toggleSession);
 window.electronAPI?.onToggleSession(toggleSession);
 
 hideFloatingBtn.addEventListener('click', () => {
+  // Hide just the floating pill, main window stays visible
   floatingOverlay.style.display = 'none';
-  mainAppWindow.style.display = 'flex';
 });
+
 
 function toggleSession() {
   isSessionActive = !isSessionActive;
   if (isSessionActive) {
-    mainAppWindow.style.display = 'none';
+    // Show floating pill on top — main window stays visible underneath (answers are visible!)
     floatingOverlay.style.display = 'flex';
     listenSessionBtn.innerText = '⏹ Stop Session';
     listenSessionBtn.style.background = '#ef4444';
-    heroStartBtn.innerText = '⏹ Stop Session';
+    heroStartBtn.innerText = '⏹ Stop';
     heroStartBtn.style.background = '#ef4444';
-    
+
     // Hide onboarding card once session begins
     const emptyCard = document.getElementById('emptyStateCard');
     if (emptyCard) emptyCard.style.display = 'none';
@@ -142,7 +143,6 @@ function toggleSession() {
     startSpeechRecognition();
   } else {
     floatingOverlay.style.display = 'none';
-    mainAppWindow.style.display = 'flex';
     listenSessionBtn.innerText = '▶ Start Session';
     listenSessionBtn.style.background = '#22c55e';
     heroStartBtn.innerText = '✈ Start Intruely';
