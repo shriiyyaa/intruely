@@ -68,26 +68,28 @@ describe('POST /ai/ask — Public Access & Core Functionality', () => {
     expect(capturedBody.contents[0].parts[0].text).toContain('Analyze the attached image');
   });
 
-  it('enforces elite executive system instructions in default system context', async () => {
+  it('enforces STAR method framework in default system context', async () => {
     let capturedBody = null;
     fetch.mockImplementationOnce(async (url, opts) => {
       capturedBody = JSON.parse(opts.body);
       return {
         json: async () => ({
-          candidates: [{ content: { parts: [{ text: 'High impact response.' }] } }]
+          candidates: [{ content: { parts: [{ text: 'STAR method response.' }] } }]
         })
       };
     });
 
     await request(app)
       .post('/ai/ask')
-      .send({ prompt: 'How do I scale a microservice?' });
+      .send({ prompt: 'Tell me about a time you resolved a critical production incident.' });
 
     const promptText = capturedBody.contents[0].parts[0].text;
-    expect(promptText).toContain('Intruely AI');
-    expect(promptText).toContain('Direct Impact');
-    expect(promptText).toContain('Structured Clarity');
+    expect(promptText).toContain('STAR Method Enforcement');
+    expect(promptText).toContain('Situation');
+    expect(promptText).toContain('Action');
+    expect(promptText).toContain('Result');
   });
+
 
   it('injects custom modePrompt override cleanly', async () => {
     let capturedBody = null;
