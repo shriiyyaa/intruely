@@ -232,16 +232,24 @@ async function callAI(userPrompt, imageBase64 = null) {
     if (res.ok) {
       const data = await res.json();
       if (data.response) return data.response;
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      console.log('Backend proxy returned error:', res.status, errData);
+      if (errData.error) {
+        return `⚠️ Backend Error (${res.status}): ${errData.error}`;
+      }
     }
   } catch (backendErr) {
-    console.log('Backend proxy unavailable or timed out, checking direct fallback key...', backendErr);
+    console.log('Backend proxy network error or timeout:', backendErr);
   }
+
 
 
   // Fallback: Direct Gemini API Call if BYOK API key configured
   if (!apiKey) {
-    return "⚠️ Please set your free Gemini API key in Profile -> Settings (or wait a moment for backend to warm up)!";
+    return "⚡ Free Cloud Backend is warming up on Render (free tier cold-start)! Please try again in 15 seconds, or add your free Gemini API key in Profile -> Settings for zero-wait responses.";
   }
+
 
   try {
     const fullPrompt = `System Context Mode:\n${customPromptMode}\n\nUser Question/Screen Request: ${userPrompt}\nGive a direct, optimal answer tailored to the mode instructions above.`;
