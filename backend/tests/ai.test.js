@@ -90,6 +90,29 @@ describe('POST /ai/ask — Public Access & Core Functionality', () => {
     expect(promptText).toContain('Result');
   });
 
+  it('enforces C++/Python 3-tier approach framework for coding questions', async () => {
+    let capturedBody = null;
+    fetch.mockImplementationOnce(async (url, opts) => {
+      capturedBody = JSON.parse(opts.body);
+      return {
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: '3-tier coding solution.' }] } }]
+        })
+      };
+    });
+
+    await request(app)
+      .post('/ai/ask')
+      .send({ prompt: 'Two Sum LeetCode problem' });
+
+    const promptText = capturedBody.contents[0].parts[0].text;
+    expect(promptText).toContain('C++');
+    expect(promptText).toContain('Brute Force');
+    expect(promptText).toContain('Optimal Solution');
+    expect(promptText).toContain('What to Say to Interviewer');
+  });
+
+
 
   it('injects custom modePrompt override cleanly', async () => {
     let capturedBody = null;
