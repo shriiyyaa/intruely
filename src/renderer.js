@@ -478,8 +478,8 @@ function renderPaneContent(pane) {
 
       <div style="font-size:12px; font-weight:600; margin-top:20px; margin-bottom:8px;">Reference files</div>
       <div style="background:var(--panel-dark); border:1px dashed var(--border-color); border-radius:10px; padding:30px; text-align:center;">
-        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">Add text files (e.g., .txt, .md, .py, .cpp, .js) as real-time context.</div>
-        <input type="file" id="uploadFileHidden" style="display:none;" accept=".txt,.js,.py,.cpp,.html,.css,.md,.json,.csv" />
+        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">Add files (e.g., .pdf, .txt, .md, .py, .cpp, .js) as real-time context.</div>
+        <input type="file" id="uploadFileHidden" style="display:none;" accept=".pdf,.txt,.js,.py,.cpp,.html,.css,.md,.json,.csv" />
         <button class="setting-btn" id="uploadFileBtn">📎 Upload file</button>
       </div>
     `;
@@ -491,17 +491,33 @@ function renderPaneContent(pane) {
       
       if (uploadFileBtn && uploadFileHidden) {
         uploadFileBtn.addEventListener('click', () => uploadFileHidden.click());
-        uploadFileHidden.addEventListener('change', (e) => {
+        uploadFileHidden.addEventListener('change', async (e) => {
           const file = e.target.files[0];
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            const content = ev.target.result;
-            const appendText = `\n\n--- [FILE: ${file.name}] ---\n${content}\n`;
-            promptModeArea.value += appendText;
-            saveModePrompt(); // Auto save
-          };
-          reader.readAsText(file);
+          
+          if (file.name.toLowerCase().endsWith('.pdf') && window.electronAPI?.parsePdf) {
+            try {
+              const uploadFileBtnOriginalText = uploadFileBtn.innerText;
+              uploadFileBtn.innerText = '⏳ Parsing PDF...';
+              const textContent = await window.electronAPI.parsePdf(file.path);
+              const appendText = `\n\n--- [FILE: ${file.name}] ---\n${textContent}\n`;
+              promptModeArea.value += appendText;
+              saveModePrompt(); // Auto save
+              uploadFileBtn.innerText = uploadFileBtnOriginalText;
+            } catch (err) {
+              alert('Failed to parse PDF file: ' + err.message);
+              uploadFileBtn.innerText = '📎 Upload file';
+            }
+          } else {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              const content = ev.target.result;
+              const appendText = `\n\n--- [FILE: ${file.name}] ---\n${content}\n`;
+              promptModeArea.value += appendText;
+              saveModePrompt(); // Auto save
+            };
+            reader.readAsText(file);
+          }
         });
       }
     }, 50);

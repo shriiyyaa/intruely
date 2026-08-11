@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain, globalShortcut, desktopCapturer, session } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
+const fs = require('fs');
+const pdfParse = require('pdf-parse');
 
 let mainWindow = null;
 
@@ -204,5 +206,16 @@ ipcMain.handle('minimize-window', () => {
 
 ipcMain.handle('close-window', () => {
   if (mainWindow) mainWindow.close();
+});
+
+ipcMain.handle('parse-pdf', async (event, filePath) => {
+  try {
+    const dataBuffer = fs.readFileSync(filePath);
+    const data = await pdfParse(dataBuffer);
+    return data.text;
+  } catch (err) {
+    console.error('PDF parsing error:', err);
+    throw err;
+  }
 });
 
