@@ -194,12 +194,22 @@ const transcriptLogContent = document.getElementById('transcriptLogContent');
 toggleTranscriptBtn?.addEventListener('click', toggleTranscriptDrawer);
 liveTranscriptIndicator?.addEventListener('click', toggleTranscriptDrawer);
 
-function toggleTranscriptDrawer() {
+// Make the brand badge a back-to-home button
+const brandBadge = document.querySelector('.brand-badge');
+if (brandBadge) {
+  brandBadge.style.cursor = 'pointer';
+  brandBadge.title = 'Back to Home / Settings';
+  brandBadge.addEventListener('click', toggleSession);
+}
+
+function toggleTranscriptDrawer(forceOpen = false) {
   if (transcriptDrawer) {
     const isHidden = transcriptDrawer.style.display === 'none';
-    transcriptDrawer.style.display = isHidden ? 'block' : 'none';
+    if (forceOpen && !isHidden) return;
+    
+    transcriptDrawer.style.display = forceOpen ? 'block' : (isHidden ? 'block' : 'none');
     if (toggleTranscriptBtn) {
-      toggleTranscriptBtn.innerText = isHidden ? '🎙️ Hide Transcript' : '🎙️ View Transcript';
+      toggleTranscriptBtn.innerText = transcriptDrawer.style.display === 'block' ? '🎙️ Hide Transcript' : '🎙️ View Transcript';
     }
   }
 }
@@ -663,7 +673,9 @@ async function callAI(userPrompt, imageBase64 = null) {
   // ── 1. Try cloud backend (fast path, handles key rotation server-side) ──────
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    // If no local key, wait 60 seconds for Render free tier cold-start. Otherwise, fail fast (8s).
+    const timeoutMs = apiKey ? 8000 : 60000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(`${BACKEND_URL}/ai/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

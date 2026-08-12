@@ -208,9 +208,9 @@ ipcMain.handle('close-window', () => {
   if (mainWindow) mainWindow.close();
 });
 
-ipcMain.handle('parse-pdf', async (event, filePath) => {
+ipcMain.handle('parse-pdf', async (event, arrayBuffer) => {
   try {
-    const dataBuffer = fs.readFileSync(filePath);
+    const dataBuffer = Buffer.from(arrayBuffer);
     const data = await pdfParse(dataBuffer);
     return data.text;
   } catch (err) {
