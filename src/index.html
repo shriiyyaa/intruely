@@ -12,10 +12,16 @@
     <!-- Top Nav Header -->
     <div class="top-header">
       <div class="nav-left">
-        <span class="nav-arrow" id="backBtn">←</span>
-        <span class="nav-arrow" id="forwardBtn">→</span>
+        <button class="icon-nav-btn" id="backBtn" title="Back">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        <button class="icon-nav-btn" id="forwardBtn" title="Forward">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
         <span class="app-title" id="homeTitleBtn">Intruely</span>
-        <button class="refresh-btn" id="refreshBtn" title="Refresh session">⟳</button>
+        <button class="refresh-btn" id="refreshBtn" title="Refresh session">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        </button>
         <div class="detectable-pill">
           <span id="stealthLabel">Detectable</span>
           <div class="toggle-switch off" id="stealthToggle">
@@ -25,28 +31,38 @@
       </div>
 
       <div class="search-omnibar">
-        <span style="opacity: 0.5;">🔍</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="cyan-icon"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <input type="text" placeholder="Search or ask anything..." id="topSearchInput" />
       </div>
 
       <div style="display:flex; align-items:center; gap: 8px;">
-        <button class="hero-start-btn" id="heroStartBtn">✈ Start Intruely</button>
+        <button class="hero-start-btn" id="heroStartBtn">Start Intruely</button>
         <div class="user-profile-btn" id="profileBtn">S</div>
         <div class="window-ops">
-          <button class="win-btn" id="minimizeBtn">─</button>
-          <button class="win-btn" id="closeBtn">✕</button>
+          <button class="win-btn" id="minimizeBtn">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <button class="win-btn close" id="closeBtn">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Profile Dropdown -->
+    <!-- Profile Dropdown Menu -->
     <div class="profile-dropdown" id="profileDropdown">
       <div class="dropdown-header">
         <div class="dropdown-name" id="userNameLabel">Shriya Nayyar</div>
         <div class="dropdown-email" id="userEmailLabel">snayyar526@gmail.com</div>
       </div>
-      <div class="dropdown-item" id="manageModesMenuItem">📂 Manage Modes</div>
-      <div class="dropdown-item" id="settingsMenuItem">⚙️ Settings</div>
+      <div class="dropdown-item" id="manageModesMenuItem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        Manage Modes
+      </div>
+      <div class="dropdown-item" id="settingsMenuItem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Settings
+      </div>
     </div>
 
     <!-- Main Content Body -->
@@ -54,14 +70,16 @@
       
       <!-- Home Pane Split Layout (Left: Live Transcript Stream, Right: AI Q&A Feed) -->
       <div class="home-pane" id="homePane" style="padding: 12px;">
-        <a href="#" class="meeting-header-link" id="linkCalendarBtn"><span style="color:#38bdf8;">Link your calendar</span> to get notifications for upcoming meetings.</a>
+        <a href="#" class="meeting-header-link" id="linkCalendarBtn"><span style="color:var(--cyan-400);">Link your calendar</span> to receive notifications for upcoming meetings.</a>
         
         <!-- Onboarding Empty State Card -->
         <div class="empty-state-card" id="emptyStateCard">
-          <div class="monitor-icon">🖥️</div>
+          <div class="monitor-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          </div>
           <h2>Start your first session</h2>
-          <p>Intruely provides live AI help during your conversation and generates searchable summaries afterwards.</p>
-          <button class="center-start-btn" id="centerStartBtn">Start Intruely</button>
+          <p>Intruely provides live AI assistance during conversations and generates structured summaries afterwards.</p>
+          <button class="center-start-btn" id="centerStartBtn">Start Session</button>
         </div>
 
         <!-- 2-COLUMN SPLIT CONTAINER -->
@@ -69,21 +87,21 @@
           <!-- LEFT COLUMN: VERTICAL RECTANGLE FOR LIVE TRANSCRIPT STREAM -->
           <div class="transcript-vertical-column">
             <div class="column-header">
-              <span>🎙️ LIVE AUDIO TRANSCRIPT</span>
+              <span>LIVE AUDIO TRANSCRIPT</span>
               <span class="live-status-dot" id="splitLiveStatus"></span>
             </div>
             <div class="transcript-stream-box" id="splitTranscriptBox">
-              <div class="transcript-placeholder" id="transcriptPlaceholder">Audio stream waiting... Click "▶ Start Session" or press Ctrl+Shift+\ to listen.</div>
+              <div class="transcript-placeholder" id="transcriptPlaceholder">Audio stream waiting. Click Start Session or press Ctrl+Shift+\ to listen.</div>
             </div>
           </div>
 
-          <!-- RIGHT COLUMN: SQUARE FEED FOR QUESTIONS & OPTIMAL AI ANSWERS -->
+          <!-- RIGHT COLUMN: FEED FOR QUESTIONS & OPTIMAL AI ANSWERS -->
           <div class="qa-feed-column">
             <div class="column-header">
-              <span>✨ AI ANSWERS & INTERVIEW COPILOT</span>
+              <span>AI ANSWERS AND INTERVIEW COPILOT</span>
             </div>
             <div id="aiResponseFeed" class="qa-response-feed">
-              <!-- AI Cards, STAR answers, C++/Python code snippets inserted here -->
+              <!-- AI Cards, STAR answers, code solutions rendered here -->
             </div>
           </div>
         </div>
@@ -92,24 +110,26 @@
       <!-- Settings & Modes Overlay Screen -->
       <div class="fullview-overlay" id="fullviewOverlay">
         <div class="sidebar-nav">
-          <div style="padding: 12px 16px; border-bottom: 1px solid var(--border-color); display:flex; align-items:center; gap:8px;">
-            <button id="closeSidebarBtn" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:18px; line-height:1;" title="Close">←</button>
+          <div style="padding: 12px 16px; border-bottom: 1px solid var(--panel-border); display:flex; align-items:center; gap:8px;">
+            <button id="closeSidebarBtn" class="icon-nav-btn" title="Close">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
             <span style="font-size:13px; font-weight:600;">Settings</span>
           </div>
           <div class="nav-group">
-            <div class="nav-item active" data-pane="general">⚙️ General</div>
-            <div class="nav-item" data-pane="modes">📂 Manage Modes</div>
-            <div class="nav-item" data-pane="calendar">📅 Calendar</div>
-            <div class="nav-item" data-pane="keybinds">⌨️ Keybinds</div>
-            <div class="nav-item" data-pane="profile">👤 Profile</div>
-            <div class="nav-item" data-pane="language">🌐 Language</div>
-            <div class="nav-item" data-pane="billing">💳 Billing (Free)</div>
+            <div class="nav-item active" data-pane="general">General</div>
+            <div class="nav-item" data-pane="modes">Manage Modes</div>
+            <div class="nav-item" data-pane="calendar">Calendar</div>
+            <div class="nav-item" data-pane="keybinds">Keybinds</div>
+            <div class="nav-item" data-pane="profile">Profile</div>
+            <div class="nav-item" data-pane="language">Language</div>
+            <div class="nav-item" data-pane="billing">Billing (Free)</div>
           </div>
           <div class="nav-group">
             <div class="nav-group-title">Support</div>
-            <div class="nav-item">📄 Release Notes</div>
-            <div class="nav-item">❓ Help Center</div>
-            <div class="nav-item" id="quitAppBtn">🚪 Quit Intruely</div>
+            <div class="nav-item">Release Notes</div>
+            <div class="nav-item">Help Center</div>
+            <div class="nav-item" id="quitAppBtn">Quit Intruely</div>
           </div>
         </div>
 
@@ -122,55 +142,63 @@
 
     <!-- Bottom Dock Command Bar -->
     <div class="bottom-dock">
-      <button class="setting-btn" id="listenSessionBtn" style="background:#22c55e; color:black; font-weight:700;">▶ Start Session</button>
+      <button class="setting-btn primary-cyan" id="listenSessionBtn">Start Session</button>
       <input type="text" class="dock-input" id="dockPromptInput" placeholder="Ask Intruely about your screen or audio (Ctrl + Enter)..." />
-      <button class="setting-btn" id="dockSnapBtn">📷 Screen Snap</button>
+      <button class="setting-btn" id="dockSnapBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+        Screen Snap
+      </button>
     </div>
   </div>
 
-  <!-- FLOATING ACTIVE SESSION CONTROLLER & DOCK (Matches Image 3 1:1) -->
+  <!-- FLOATING ACTIVE SESSION CONTROLLER & DOCK -->
   <div class="floating-session-overlay" id="floatingOverlay" style="display: none;">
     <!-- Top Pill Bar -->
     <div class="floating-top-pill">
-      <div class="brand-badge">✈</div>
-      <button class="pill-btn" id="startListeningBtn" style="color:#22c55e;">▶ Listen</button>
-      <button class="pill-btn" id="toggleTranscriptBtn">🎙️ View Transcript</button>
-      <button class="pill-btn" id="hideFloatingBtn">˅ Hide</button>
-      <button class="pill-btn stop" id="stopFloatingBtn">⏹</button>
+      <div class="brand-badge">I</div>
+      <button class="pill-btn cyan-btn" id="startListeningBtn">Listen</button>
+      <button class="pill-btn" id="toggleTranscriptBtn">View Transcript</button>
+      <button class="pill-btn" id="hideFloatingBtn">Hide</button>
+      <button class="pill-btn stop" id="stopFloatingBtn">Stop</button>
     </div>
 
     <!-- Floating Dock Assistant Bar -->
     <div class="floating-dock-card">
       <div class="quick-chips-row">
-        <span class="chip-item" id="chipAssist">✨ Assist</span>
-        <span class="chip-dot">·</span>
-        <span class="chip-item" id="chipSay">🪄 What should I say?</span>
-        <span class="chip-dot">·</span>
-        <span class="chip-item" id="chipFollowup">💬 Follow-up questions</span>
-        <span class="chip-dot">·</span>
-        <span class="chip-item" id="chipRecap">🔄 Recap</span>
+        <span class="chip-item" id="chipAssist">Assist</span>
+        <span class="chip-dot">.</span>
+        <span class="chip-item" id="chipSay">What to Say</span>
+        <span class="chip-dot">.</span>
+        <span class="chip-item" id="chipCode">Code Solution</span>
+        <span class="chip-dot">.</span>
+        <span class="chip-item" id="chipStar">STAR Answer</span>
+        <span class="chip-dot">.</span>
+        <span class="chip-item" id="chipFollowup">Follow-ups</span>
+        <span class="chip-dot">.</span>
+        <span class="chip-item" id="chipRecap">Recap</span>
       </div>
 
       <div class="floating-input-box">
-        <input type="text" id="floatingPromptInput" placeholder="Ask about your screen or conversation, or Ctrl ↵ for Assist" />
+        <input type="text" id="floatingPromptInput" placeholder="Ask about screen (Ctrl Enter) or audio conversation..." />
         <div class="input-actions">
-          <span class="mode-tag">Smart</span>
-          <span class="more-dots">...</span>
-          <button class="send-btn" id="floatingSendBtn">➔</button>
+          <span class="mode-tag" id="activeModeBadge" title="Click to manage mode">Interview Copilot</span>
+          <button class="send-btn" id="floatingSendBtn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </button>
         </div>
       </div>
 
       <!-- Live Speech Wave Indicator & Real-Time Audio Transcript Feed -->
       <div class="live-transcript-indicator" id="liveTranscriptIndicator">
         <span class="recording-dot"></span>
-        <span id="liveSpeechText">Listening live audio stream...</span>
+        <span id="liveSpeechText">Session started. Click Listen to begin continuous transcription.</span>
       </div>
 
       <!-- Expandable Live Transcript Log Panel -->
       <div class="transcript-drawer" id="transcriptDrawer" style="display: none;">
         <div class="drawer-header">LIVE AUDIO SPEECH TRANSCRIPT</div>
         <div class="drawer-content" id="transcriptLogContent">
-          <div style="font-size:11px; opacity:0.6; font-style:italic;">Speech recognition running... Speak or play meeting audio to view live text transcript here.</div>
+          <div style="font-size:11px; opacity:0.6; font-style:italic;">Audio processing active... Speak or play meeting audio to capture real-time speech.</div>
         </div>
       </div>
     </div>

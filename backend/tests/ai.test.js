@@ -158,7 +158,7 @@ describe('POST /ai/ask — Public Access & Core Functionality', () => {
   });
 
   it('returns structured 500 error when Gemini API returns an upstream error object', async () => {
-    fetch.mockResolvedValueOnce({
+    fetch.mockResolvedValue({
       json: async () => ({
         error: { message: 'Quota exceeded for project' }
       })
@@ -169,7 +169,7 @@ describe('POST /ai/ask — Public Access & Core Functionality', () => {
       .send({ prompt: 'Test quota limit' });
 
     expect(res.status).toBe(500);
-    expect(res.body.error).toContain('Gemini API Error: Quota exceeded for project');
+    expect(res.body.error).toContain('Quota exceeded for project');
   });
 
   it('returns structured 500 error when no API key is configured', async () => {

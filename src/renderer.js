@@ -6,8 +6,8 @@ let activePane = 'general';
 let isStealthActive = false;
 let isSessionActive = false;
 let recognition = null;
-let customPromptMode = localStorage.getItem('INTRUELY_MODE_PROMPT') || `description: >
-Comprehensive interview-prep reference for Shriya Nayyar covering background, work experience, and every project in technical depth, with anticipated interview questions and answer angles.`;
+let customPromptMode = localStorage.getItem('INTRUELY_MODE_PROMPT') || `description:
+Comprehensive interview-prep reference covering background, work experience, and technical projects with anticipated interview questions.`;
 
 let apiKey = localStorage.getItem('GEMINI_API_KEY') || '';
 
@@ -29,7 +29,7 @@ const heroStartBtn = document.getElementById('heroStartBtn');
 const centerStartBtn = document.getElementById('centerStartBtn');
 const refreshBtn = document.getElementById('refreshBtn');
 
-// Floating Overlay Elements (Image 3)
+// Floating Overlay Elements
 const mainAppWindow = document.getElementById('mainAppWindow');
 const floatingOverlay = document.getElementById('floatingOverlay');
 const hideFloatingBtn = document.getElementById('hideFloatingBtn');
@@ -47,14 +47,12 @@ homeTitleBtn?.addEventListener('click', () => {
   profileDropdown?.classList.remove('active');
 });
 
-// Back button and sidebar close button both dismiss fullview overlay
 document.getElementById('backBtn')?.addEventListener('click', () => {
   fullviewOverlay?.classList.remove('active');
 });
 
-// Close sidebar button (← inside the settings panel)
 document.addEventListener('click', (e) => {
-  if (e.target && e.target.id === 'closeSidebarBtn') {
+  if (e.target && (e.target.id === 'closeSidebarBtn' || e.target.closest('#closeSidebarBtn'))) {
     fullviewOverlay?.classList.remove('active');
   }
   if (e.target && e.target.id === 'quitAppBtn') {
@@ -111,13 +109,12 @@ function openFullview(paneName) {
   renderPaneContent(paneName);
 }
 
-// Session Controller Logic — Transforms between Main Window and Floating Pill (Image 3)
+// Session Controller Logic
 heroStartBtn?.addEventListener('click', toggleSession);
 centerStartBtn?.addEventListener('click', toggleSession);
 listenSessionBtn?.addEventListener('click', toggleSession);
 stopFloatingBtn?.addEventListener('click', toggleSession);
 
-// Wire Ctrl+Shift+\ global hotkey to toggle session
 window.electronAPI?.onToggleSession(toggleSession);
 
 hideFloatingBtn?.addEventListener('click', () => {
@@ -130,35 +127,33 @@ let isListeningActive = false;
 function toggleSession() {
   isSessionActive = !isSessionActive;
   if (isSessionActive) {
-    // 1:1 Cluely Behavior: Session starts -> main window hides into sleek top floating pill card!
     if (mainAppWindow) mainAppWindow.style.display = 'none';
     if (floatingOverlay) floatingOverlay.style.display = 'flex';
 
     if (listenSessionBtn) {
-      listenSessionBtn.innerText = '⏹ Stop Session';
+      listenSessionBtn.innerText = 'Stop Session';
       listenSessionBtn.style.background = '#ef4444';
     }
     if (heroStartBtn) {
-      heroStartBtn.innerText = '⏹ Stop';
+      heroStartBtn.innerText = 'Stop';
       heroStartBtn.style.background = '#ef4444';
     }
 
     const emptyCard = document.getElementById('emptyStateCard');
     if (emptyCard) emptyCard.style.display = 'none';
 
-    // DOES NOT START LISTENING AUTOMATICALLY ANYMORE
-    if (liveSpeechText) liveSpeechText.innerText = 'Session started. Click "▶ Listen" to begin recording.';
+    if (liveSpeechText) liveSpeechText.innerText = 'Session started. Click Listen to begin recording.';
   } else {
     if (floatingOverlay) floatingOverlay.style.display = 'none';
     if (mainAppWindow) mainAppWindow.style.display = 'flex';
 
     if (listenSessionBtn) {
-      listenSessionBtn.innerText = '▶ Start Session';
-      listenSessionBtn.style.background = '#22c55e';
+      listenSessionBtn.innerText = 'Start Session';
+      listenSessionBtn.style.background = 'var(--cyan-500)';
     }
     if (heroStartBtn) {
-      heroStartBtn.innerText = '✈ Start Intruely';
-      heroStartBtn.style.background = '#3b82f6';
+      heroStartBtn.innerText = 'Start Intruely';
+      heroStartBtn.style.background = 'var(--cyan-500)';
     }
 
     if (isListeningActive) toggleListening();
@@ -172,14 +167,14 @@ function toggleListening() {
   isListeningActive = !isListeningActive;
   if (isListeningActive) {
     if (startListeningBtn) {
-      startListeningBtn.innerText = '⏸ Stop Listen';
+      startListeningBtn.innerText = 'Stop Listen';
       startListeningBtn.style.color = '#ef4444';
     }
     startSpeechRecognition();
   } else {
     if (startListeningBtn) {
-      startListeningBtn.innerText = '▶ Listen';
-      startListeningBtn.style.color = '#22c55e';
+      startListeningBtn.innerText = 'Listen';
+      startListeningBtn.style.color = 'var(--cyan-400)';
     }
     stopSpeechRecognition();
   }
@@ -191,10 +186,9 @@ const transcriptDrawer = document.getElementById('transcriptDrawer');
 const liveTranscriptIndicator = document.getElementById('liveTranscriptIndicator');
 const transcriptLogContent = document.getElementById('transcriptLogContent');
 
-toggleTranscriptBtn?.addEventListener('click', toggleTranscriptDrawer);
-liveTranscriptIndicator?.addEventListener('click', toggleTranscriptDrawer);
+toggleTranscriptBtn?.addEventListener('click', () => toggleTranscriptDrawer());
+liveTranscriptIndicator?.addEventListener('click', () => toggleTranscriptDrawer());
 
-// Make the brand badge a back-to-home button
 const brandBadge = document.querySelector('.brand-badge');
 if (brandBadge) {
   brandBadge.style.cursor = 'pointer';
@@ -209,18 +203,12 @@ function toggleTranscriptDrawer(forceOpen = false) {
     
     transcriptDrawer.style.display = forceOpen ? 'block' : (isHidden ? 'block' : 'none');
     if (toggleTranscriptBtn) {
-      toggleTranscriptBtn.innerText = transcriptDrawer.style.display === 'block' ? '🎙️ Hide Transcript' : '🎙️ View Transcript';
+      toggleTranscriptBtn.innerText = transcriptDrawer.style.display === 'block' ? 'Hide Transcript' : 'View Transcript';
     }
   }
 }
 
-// ===================================================================
-// DUAL-TRACK AUDIO ENGINE
-// Track 1: System Audio Loopback via desktopCapturer (hears meetings)
-// Track 2: Microphone via getUserMedia (hears user speech)
-// Both feed into Web Speech API recognition on their own audio context
-// ===================================================================
-
+// Dual-Track Audio Engine
 let micStream = null;
 let systemAudioStream = null;
 let micRecognition = null;
@@ -237,11 +225,11 @@ function appendTranscriptEntry(text, source) {
     const entry = document.createElement('div');
     entry.style.margin = '6px 0';
     entry.style.padding = '6px 8px';
-    entry.style.background = 'rgba(255, 255, 255, 0.03)';
-    entry.style.borderLeft = source === 'MIC' ? '3px solid #38bdf8' : '3px solid #10b981';
+    entry.style.background = 'rgba(6, 182, 212, 0.05)';
+    entry.style.borderLeft = source === 'MIC' ? '3px solid #22d3ee' : '3px solid #06b6d4';
     entry.style.borderRadius = '4px';
     entry.style.fontSize = '12px';
-    const color = source === 'MIC' ? '#38bdf8' : '#10b981';
+    const color = source === 'MIC' ? '#22d3ee' : '#06b6d4';
     entry.innerHTML = `<span style="color:${color}; font-weight:700;">[${source}]</span> ${text}`;
     splitBox.appendChild(entry);
     splitBox.scrollTop = splitBox.scrollHeight;
@@ -251,64 +239,15 @@ function appendTranscriptEntry(text, source) {
     const entry = document.createElement('div');
     entry.style.margin = '4px 0';
     entry.style.fontSize = '11px';
-    const color = source === 'MIC' ? '#38bdf8' : '#10b981';
+    const color = source === 'MIC' ? '#22d3ee' : '#06b6d4';
     entry.innerHTML = `<span style="color:${color}; font-weight:700;">[${source}]</span> ${text}`;
     transcriptLogContent.appendChild(entry);
     transcriptLogContent.scrollTop = transcriptLogContent.scrollHeight;
   }
 }
 
-function buildRecognition(stream, sourceLabel) {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) return null;
-
-  const rec = new SpeechRecognition();
-  rec.continuous = true;
-  rec.interimResults = true;
-  rec.lang = 'en-US';
-
-  // Pipe the MediaStream audio into the recognition engine via AudioContext
-  const audioCtx = new AudioContext();
-  const source = audioCtx.createMediaStreamSource(stream);
-  const dest = audioCtx.createMediaStreamDestination();
-  source.connect(dest);
-
-  // Override the recognition stream via MediaStreamConstraints hack
-  // We attach to the hidden audio element approach:
-  let hiddenAudio = document.createElement('audio');
-  hiddenAudio.srcObject = stream;
-  hiddenAudio.muted = true; // Don't play it back
-  document.body.appendChild(hiddenAudio);
-
-  rec.onresult = (event) => {
-    let text = '';
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-      text += event.results[i][0].transcript;
-    }
-    if (text.trim()) {
-      appendTranscriptEntry(text.trim(), sourceLabel);
-    }
-  };
-
-  rec.onerror = (err) => {
-    if (err.error !== 'no-speech') {
-      console.warn(`[${sourceLabel}] Recognition error:`, err.error);
-    }
-  };
-
-  rec.onend = () => {
-    // Auto-restart if session still active
-    if (isSessionActive) {
-      try { rec.start(); } catch(e) {}
-    }
-  };
-
-  try { rec.start(); } catch(e) { console.warn('Rec start err:', e); }
-  return rec;
-}
-
 async function startSpeechRecognition() {
-  if (liveSpeechText) liveSpeechText.innerText = 'Starting audio speech recognition...';
+  if (liveSpeechText) liveSpeechText.innerText = 'Starting speech recognition...';
   const splitLiveStatus = document.getElementById('splitLiveStatus');
   if (splitLiveStatus) splitLiveStatus.classList.add('active');
 
@@ -341,7 +280,7 @@ async function startSpeechRecognition() {
     };
 
     micRecognition.onend = () => {
-      if (isSessionActive) {
+      if (isSessionActive && isListeningActive) {
         try { micRecognition.start(); } catch(e) {}
       } else {
         if (splitLiveStatus) splitLiveStatus.classList.remove('active');
@@ -349,7 +288,7 @@ async function startSpeechRecognition() {
     };
 
     micRecognition.start();
-    if (liveSpeechText) liveSpeechText.innerText = '🟢 Listening live audio stream...';
+    if (liveSpeechText) liveSpeechText.innerText = 'Listening live audio stream...';
   } catch (e) {
     console.error('Speech init error:', e);
     if (liveSpeechText) liveSpeechText.innerText = 'Speech recognition initialization failed.';
@@ -368,12 +307,48 @@ function stopSpeechRecognition() {
   if (liveSpeechText) liveSpeechText.innerText = 'Session stopped.';
 }
 
+// Markdown & Code Formatting Engine
+function formatMarkdown(text) {
+  if (!text) return '';
+  
+  let html = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+    const language = lang || 'code';
+    const cleanCode = code.trim();
+    const encodedCode = encodeURIComponent(cleanCode);
+    const escapedCode = cleanCode
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    return `<div class="code-wrapper">
+      <div class="code-header">
+        <span>${language.toUpperCase()}</span>
+        <button class="copy-code-btn" onclick="navigator.clipboard.writeText(decodeURIComponent('${encodedCode}')); this.innerText='Copied'; setTimeout(()=>this.innerText='Copy Code', 1800);">Copy Code</button>
+      </div>
+      <pre class="code-block"><code>${escapedCode}</code></pre>
+    </div>`;
+  });
 
-// Quick Chip Assistant Triggers (Image 3)
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(6,182,212,0.1); padding:2px 5px; border-radius:4px; font-family:monospace; color:var(--cyan-300);">$1</code>');
+  html = html.replace(/^[\*\-] (.*$)/gim, '<ul><li>$1</li></ul>');
+  html = html.replace(/<\/ul>\s*<ul>/g, '');
+  html = html.replace(/\n/g, '<br>');
+  
+  return html;
+}
+
+// Quick Chip Assistant Triggers
 document.getElementById('chipAssist')?.addEventListener('click', () => sendFloatingPrompt("Provide an instant assist for the current screen question."));
-document.getElementById('chipSay')?.addEventListener('click', () => sendFloatingPrompt("What optimal response should I say right now?"));
-document.getElementById('chipFollowup')?.addEventListener('click', () => sendFloatingPrompt("Suggest 3 intelligent follow-up questions to ask."));
+document.getElementById('chipSay')?.addEventListener('click', () => sendFloatingPrompt("What optimal verbatim response should I say right now?"));
+document.getElementById('chipCode')?.addEventListener('click', () => sendFloatingPrompt("Provide optimal C++ / Python coding solution with 3 approaches (Brute force -> Better -> Optimal)."));
+document.getElementById('chipStar')?.addEventListener('click', () => sendFloatingPrompt("Answer the recent question using STAR framework (Situation, Task, Action, Result)."));
+document.getElementById('chipFollowup')?.addEventListener('click', () => sendFloatingPrompt("Suggest 3 strategic follow-up questions to ask the interviewer right now."));
 document.getElementById('chipRecap')?.addEventListener('click', () => sendFloatingPrompt("Provide a concise summary recap of the discussion so far."));
+
+document.getElementById('activeModeBadge')?.addEventListener('click', () => {
+  openFullview('modes');
+});
 
 floatingSendBtn?.addEventListener('click', () => {
   if (floatingPromptInput && floatingPromptInput.value.trim()) {
@@ -393,14 +368,13 @@ async function sendFloatingPrompt(q) {
   const emptyCard = document.getElementById('emptyStateCard');
   if (emptyCard) emptyCard.style.display = 'none';
 
-  appendResponseCard('You', q, '#3b82f6');
-  const aiCard = appendResponseCard('Intruely AI', 'Thinking...', '#22c55e');
+  appendResponseCard('You', q, '#06b6d4');
+  const aiCard = appendResponseCard('Intruely AI', 'Thinking...', '#22d3ee');
 
-  // Also append to floating drawer content if active
   if (transcriptLogContent) {
     const promptEntry = document.createElement('div');
     promptEntry.style.margin = '6px 0';
-    promptEntry.style.color = '#3b82f6';
+    promptEntry.style.color = '#06b6d4';
     promptEntry.style.fontWeight = '700';
     promptEntry.innerHTML = `[YOU]: ${q}`;
     transcriptLogContent.appendChild(promptEntry);
@@ -412,10 +386,10 @@ async function sendFloatingPrompt(q) {
   if (transcriptLogContent) {
     const aiEntry = document.createElement('div');
     aiEntry.style.margin = '6px 0';
-    aiEntry.style.color = '#22c55e';
+    aiEntry.style.color = '#22d3ee';
     aiEntry.style.fontSize = '12px';
     aiEntry.style.lineHeight = '1.4';
-    aiEntry.innerHTML = `<span style="font-weight:700;">[INTRUELY AI]:</span><br>${res.replace(/\n/g, '<br>')}`;
+    aiEntry.innerHTML = `<span style="font-weight:700;">[INTRUELY AI]:</span><br>${formatMarkdown(res)}`;
     transcriptLogContent.appendChild(aiEntry);
     transcriptLogContent.scrollTop = transcriptLogContent.scrollHeight;
   }
@@ -425,26 +399,30 @@ async function sendFloatingPrompt(q) {
 function renderPaneContent(pane) {
   if (pane === 'general') {
     fullviewContentPane.innerHTML = `
-      <div class="pane-title">General</div>
-      <div class="pane-subtitle">Customize how Intruely works for you</div>
+      <div class="pane-title">General Settings</div>
+      <div class="pane-subtitle">Customize application preferences</div>
 
       <div class="setting-card">
         <div class="setting-info">
-          <div class="setting-icon">📥</div>
+          <div class="setting-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          </div>
           <div>
             <div class="setting-title">Intruely Version</div>
-            <div class="setting-desc">You are currently using Intruely version 2.0.194 Free</div>
+            <div class="setting-desc">Intruely version 2.0.194 Free</div>
           </div>
         </div>
-        <button class="setting-btn">Check for updates</button>
+        <button class="setting-btn">Check updates</button>
       </div>
 
       <div class="setting-card">
         <div class="setting-info">
-          <div class="setting-icon">👁️</div>
+          <div class="setting-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </div>
           <div>
-            <div class="setting-title">Detectable</div>
-            <div class="setting-desc">Intruely is currently detectable by screen-sharing</div>
+            <div class="setting-title">Stealth Mode</div>
+            <div class="setting-desc">Toggle display affinity to hide window from screen share</div>
           </div>
         </div>
         <button class="setting-btn" onclick="document.getElementById('stealthToggle').click()">Toggle Protection</button>
@@ -452,10 +430,12 @@ function renderPaneContent(pane) {
 
       <div class="setting-card">
         <div class="setting-info">
-          <div class="setting-icon">🔑</div>
+          <div class="setting-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+          </div>
           <div>
             <div class="setting-title">Custom Gemini API Key (Optional)</div>
-            <div class="setting-desc">Render Cloud Backend active! Leave empty to use free backend, or enter your key for private BYOK.</div>
+            <div class="setting-desc">Cloud backend active. Enter key for private direct API usage.</div>
           </div>
         </div>
         <input type="password" id="geminiKeyField" class="dock-input" style="max-width:240px;" value="${apiKey}" placeholder="Optional custom key..." onchange="saveApiKey(this.value)" />
@@ -464,10 +444,12 @@ function renderPaneContent(pane) {
       <div style="margin-top:24px; font-weight:700; font-size:14px; margin-bottom:12px;">Audio Settings</div>
       <div class="setting-card">
         <div class="setting-info">
-          <div class="setting-icon">🎙️</div>
+          <div class="setting-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+          </div>
           <div>
             <div class="setting-title">Microphone Source</div>
-            <div class="setting-desc" id="micDeviceLabel">Default - Microphone Array (Realtek(R) Audio) / AirPods</div>
+            <div class="setting-desc" id="micDeviceLabel">Default Microphone Array / System Audio</div>
           </div>
         </div>
         <button class="setting-btn">Test Microphone</button>
@@ -476,21 +458,28 @@ function renderPaneContent(pane) {
   } else if (pane === 'modes') {
     fullviewContentPane.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <div class="pane-title">Untitled Mode / Real-time Context Mode</div>
-        <span style="background:rgba(34,197,94,0.15); color:#22c55e; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:600;">✓ Active</span>
+        <div class="pane-title">Manage Context Modes</div>
+        <span style="background:rgba(6,182,212,0.15); color:var(--cyan-400); padding:4px 10px; border-radius:12px; font-size:12px; font-weight:600; border:1px solid var(--cyan-500);">Active Mode</span>
       </div>
 
-      <div style="font-size:12px; font-weight:600; margin-bottom:8px;">Real-time prompt</div>
+      <div style="font-size:12px; font-weight:600; margin-bottom:8px; color:var(--grey-400);">Load Quick Mode Presets:</div>
+      <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+        <button class="setting-btn" onclick="applyModePreset('coding')">Coding and Algorithms (C++/Python)</button>
+        <button class="setting-btn" onclick="applyModePreset('behavioral')">STAR Behavioral and HR</button>
+        <button class="setting-btn" onclick="applyModePreset('system')">System Design</button>
+      </div>
+
+      <div style="font-size:12px; font-weight:600; margin-bottom:8px;">Real-time System Prompt Context</div>
       <textarea id="promptModeArea" class="prompt-editor">${customPromptMode}</textarea>
       <div style="display:flex; justify-content:flex-end; margin-top:8px;">
-        <button class="setting-btn" style="background:#22c55e; color:black;" onclick="saveModePrompt()">Save Mode Prompt</button>
+        <button class="setting-btn primary-cyan" onclick="saveModePrompt()">Save Active Mode Context</button>
       </div>
 
-      <div style="font-size:12px; font-weight:600; margin-top:20px; margin-bottom:8px;">Reference files</div>
-      <div style="background:var(--panel-dark); border:1px dashed var(--border-color); border-radius:10px; padding:30px; text-align:center;">
-        <div style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">Add files (e.g., .pdf, .txt, .md, .py, .cpp, .js) as real-time context.</div>
+      <div style="font-size:12px; font-weight:600; margin-top:20px; margin-bottom:8px;">Reference Context Files</div>
+      <div style="background:var(--grey-900); border:1px dashed var(--panel-border); border-radius:10px; padding:24px; text-align:center;">
+        <div style="font-size:12px; color:var(--grey-400); margin-bottom:12px;">Attach candidate resume, project writeups, or job descriptions (.pdf, .txt, .md, .py, .cpp, .js)</div>
         <input type="file" id="uploadFileHidden" style="display:none;" accept=".pdf,.txt,.js,.py,.cpp,.html,.css,.md,.json,.csv" />
-        <button class="setting-btn" id="uploadFileBtn">📎 Upload file</button>
+        <button class="setting-btn" id="uploadFileBtn">Upload file context</button>
       </div>
     `;
 
@@ -500,23 +489,22 @@ function renderPaneContent(pane) {
       const promptModeArea = document.getElementById('promptModeArea');
       
       if (uploadFileBtn && uploadFileHidden) {
-        uploadFileBtn.addEventListener('click', () => uploadFileHidden.click());
-        uploadFileHidden.addEventListener('change', async (e) => {
+        uploadFileBtn.onclick = () => uploadFileHidden.click();
+        uploadFileHidden.onchange = async (e) => {
           const file = e.target.files[0];
           if (!file) return;
           
           if (file.name.toLowerCase().endsWith('.pdf') && window.electronAPI?.parsePdf) {
             try {
-              const uploadFileBtnOriginalText = uploadFileBtn.innerText;
-              uploadFileBtn.innerText = '⏳ Parsing PDF...';
+              uploadFileBtn.innerText = 'Parsing PDF...';
               const textContent = await window.electronAPI.parsePdf(file.path);
               const appendText = `\n\n--- [FILE: ${file.name}] ---\n${textContent}\n`;
               promptModeArea.value += appendText;
-              saveModePrompt(); // Auto save
-              uploadFileBtn.innerText = uploadFileBtnOriginalText;
+              saveModePrompt();
+              uploadFileBtn.innerText = 'Upload file context';
             } catch (err) {
               alert('Failed to parse PDF file: ' + err.message);
-              uploadFileBtn.innerText = '📎 Upload file';
+              uploadFileBtn.innerText = 'Upload file context';
             }
           } else {
             const reader = new FileReader();
@@ -524,17 +512,17 @@ function renderPaneContent(pane) {
               const content = ev.target.result;
               const appendText = `\n\n--- [FILE: ${file.name}] ---\n${content}\n`;
               promptModeArea.value += appendText;
-              saveModePrompt(); // Auto save
+              saveModePrompt();
             };
             reader.readAsText(file);
           }
-        });
+        };
       }
     }, 50);
   } else if (pane === 'keybinds') {
     fullviewContentPane.innerHTML = `
-      <div class="pane-title">Keyboard shortcuts</div>
-      <div class="pane-subtitle">Intruely works with these easy to remember commands.</div>
+      <div class="pane-title">Keyboard Shortcuts</div>
+      <div class="pane-subtitle">Intruely hotkeys and commands</div>
 
       <div class="shortcut-row">
         <div>Toggle visibility of Intruely</div>
@@ -556,23 +544,13 @@ function renderPaneContent(pane) {
   } else if (pane === 'calendar') {
     fullviewContentPane.innerHTML = `
       <div class="pane-title">Calendar</div>
-      <div class="pane-subtitle">Connect your calendar to get meeting notifications.</div>
+      <div class="pane-subtitle">Connect calendar for meeting notifications.</div>
       <div class="setting-card" style="margin-top:20px;">
         <div class="setting-info">
-          <div class="setting-icon">📅</div>
+          <div class="setting-icon">CAL</div>
           <div>
             <div class="setting-title">Google Calendar</div>
-            <div class="setting-desc">Connect to get AI prep before your meetings start.</div>
-          </div>
-        </div>
-        <button class="setting-btn">Connect</button>
-      </div>
-      <div class="setting-card">
-        <div class="setting-info">
-          <div class="setting-icon">🗓️</div>
-          <div>
-            <div class="setting-title">Outlook / Microsoft 365</div>
-            <div class="setting-desc">Connect your Outlook calendar for meeting sync.</div>
+            <div class="setting-desc">Connect to receive meeting notifications.</div>
           </div>
         </div>
         <button class="setting-btn">Connect</button>
@@ -581,22 +559,22 @@ function renderPaneContent(pane) {
   } else if (pane === 'profile') {
     fullviewContentPane.innerHTML = `
       <div class="pane-title">Profile</div>
-      <div class="pane-subtitle">Your Intruely account details.</div>
+      <div class="pane-subtitle">Account details</div>
       <div class="setting-card" style="margin-top:20px;">
         <div class="setting-info">
-          <div class="setting-icon" style="font-size:28px; width:44px; height:44px; background:#3b82f6; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:700;">S</div>
+          <div class="setting-icon" style="font-size:16px; font-weight:700; color:black; background:var(--cyan-400);">S</div>
           <div>
             <div class="setting-title">Shriya Nayyar</div>
-            <div class="setting-desc">snayya526@gmail.com &nbsp;·&nbsp; Free Plan</div>
+            <div class="setting-desc">snayyar526@gmail.com - Free Plan</div>
           </div>
         </div>
       </div>
       <div class="setting-card">
         <div class="setting-info">
-          <div class="setting-icon">🔑</div>
+          <div class="setting-icon">KEY</div>
           <div>
             <div class="setting-title">Gemini API Key</div>
-            <div class="setting-desc">Using cloud backend. Enter your key for private BYOK mode.</div>
+            <div class="setting-desc">Cloud backend active. Enter key for private BYOK.</div>
           </div>
         </div>
         <input type="password" class="dock-input" style="max-width:220px;" value="${apiKey}" placeholder="Enter Gemini API key..." onchange="saveApiKey(this.value)" />
@@ -605,51 +583,38 @@ function renderPaneContent(pane) {
   } else if (pane === 'language') {
     fullviewContentPane.innerHTML = `
       <div class="pane-title">Language</div>
-      <div class="pane-subtitle">Set the language Intruely listens and responds in.</div>
+      <div class="pane-subtitle">Set speech recognition language</div>
       <div class="setting-card" style="margin-top:20px;">
         <div class="setting-info">
-          <div class="setting-icon">🌐</div>
+          <div class="setting-icon">LANG</div>
           <div>
             <div class="setting-title">Recognition Language</div>
-            <div class="setting-desc">Language used for live speech recognition.</div>
+            <div class="setting-desc">Language used for speech recognition.</div>
           </div>
         </div>
         <select class="setting-btn" style="cursor:pointer;" onchange="localStorage.setItem('INTRUELY_LANG', this.value)">
           <option value="en-US" ${localStorage.getItem('INTRUELY_LANG') === 'en-US' || !localStorage.getItem('INTRUELY_LANG') ? 'selected' : ''}>English (US)</option>
           <option value="en-GB" ${localStorage.getItem('INTRUELY_LANG') === 'en-GB' ? 'selected' : ''}>English (UK)</option>
           <option value="hi-IN" ${localStorage.getItem('INTRUELY_LANG') === 'hi-IN' ? 'selected' : ''}>Hindi</option>
-          <option value="fr-FR" ${localStorage.getItem('INTRUELY_LANG') === 'fr-FR' ? 'selected' : ''}>French</option>
-          <option value="de-DE" ${localStorage.getItem('INTRUELY_LANG') === 'de-DE' ? 'selected' : ''}>German</option>
         </select>
       </div>
     `;
   } else if (pane === 'billing') {
     fullviewContentPane.innerHTML = `
       <div class="pane-title">Billing</div>
-      <div class="pane-subtitle">Manage your Intruely subscription.</div>
-      <div class="setting-card" style="margin-top:20px; border-color: rgba(34,197,94,0.3);">
+      <div class="pane-subtitle">Manage subscription</div>
+      <div class="setting-card" style="margin-top:20px; border-color: var(--cyan-500);">
         <div class="setting-info">
-          <div class="setting-icon">✅</div>
+          <div class="setting-icon" style="color:var(--cyan-400);">OK</div>
           <div>
-            <div class="setting-title">Free Plan — Active</div>
-            <div class="setting-desc">You are on the Intruely Free tier. Powered by Gemini 1.5 Flash cloud backend.</div>
+            <div class="setting-title">Free Plan - Active</div>
+            <div class="setting-desc">Powered by Gemini Flash cloud backend.</div>
           </div>
         </div>
-      </div>
-      <div class="setting-card">
-        <div class="setting-info">
-          <div class="setting-icon">⚡</div>
-          <div>
-            <div class="setting-title">Upgrade to Pro</div>
-            <div class="setting-desc">Unlimited AI responses, priority processing, and advanced context modes.</div>
-          </div>
-        </div>
-        <button class="setting-btn" style="background:#3b82f6; color:white;">Upgrade</button>
       </div>
     `;
   }
 }
-
 
 function saveApiKey(val) {
   apiKey = val.trim();
@@ -661,20 +626,70 @@ function saveModePrompt() {
   if (el) {
     customPromptMode = el.value;
     localStorage.setItem('INTRUELY_MODE_PROMPT', customPromptMode);
-    alert('Mode prompt context saved!');
+    const badge = document.getElementById('activeModeBadge');
+    if (badge) badge.innerText = 'Context Saved';
+    setTimeout(() => { if (badge) badge.innerText = 'Interview Copilot'; }, 2000);
   }
 }
 
-// AI Engine Call
-// Provider waterfall: Cloud Backend → Direct Gemini BYOK → Groq BYOK
-async function callAI(userPrompt, imageBase64 = null) {
-  const systemPrompt = customPromptMode || `You are Intruely AI, an elite real-time interview copilot. For behavioral questions use STAR framework. For coding questions give 3-tier approach (brute force → optimized → optimal) in C++/Python. Be concise, authoritative, first-person.`;
+function applyModePreset(type) {
+  const el = document.getElementById('promptModeArea');
+  if (!el) return;
 
-  // ── 1. Try cloud backend (fast path, handles key rotation server-side) ──────
+  if (type === 'coding') {
+    el.value = `You are Intruely AI operating in Coding and Algorithms Mode.
+For any coding question:
+1. Explain intuition in 2 concise sentences.
+2. Provide 3 approaches: Brute Force, Better, and Optimal Solution.
+3. Write clean, production C++ (or Python) code with comments and edge case handling for the optimal approach.
+4. State exact Time Complexity: O(...) and Space Complexity: O(...).
+5. Give a "What to Say to Interviewer" verbatim script.`;
+  } else if (type === 'behavioral') {
+    el.value = `You are Intruely AI operating in STAR Behavioral and Leadership Mode.
+For any question:
+Structure response strictly using:
+- Situation: 1 sentence context and business scope.
+- Task: 1 sentence metric/problem to solve.
+- Action: 3-4 bullet points of your direct technical actions and decisions in first person ("I architected...", "I led...").
+- Result: 1 sentence quantifiable metric (% speedup, $ saved, 0 downtime).`;
+  } else if (type === 'system') {
+    el.value = `You are Intruely AI operating in System Design and Architecture Mode.
+For system design questions:
+1. Clarify Requirements (Functional and Non-Functional).
+2. High-Level Architecture (Services, Load Balancers, API Gateway, Databases).
+3. Data Model and Storage Choice (SQL vs NoSQL vs Cache).
+4. Scalability and Trade-offs (Partitioning, Sharding, Replication, Consistency vs Availability).`;
+  }
+  saveModePrompt();
+}
+
+// AI Engine Call
+async function callAI(userPrompt, imageBase64 = null) {
+  const systemPrompt = customPromptMode || `You are Intruely AI, an elite real-time interview copilot. For behavioral questions use STAR framework. For coding questions give 3-tier approach (brute force -> optimized -> optimal) in C++/Python. Be concise, authoritative, first-person.`;
+
+  // 1. Try local backend first (if running on port 3001)
   try {
     const controller = new AbortController();
-    // If no local key, wait 60 seconds for Render free tier cold-start. Otherwise, fail fast (8s).
-    const timeoutMs = apiKey ? 8000 : 60000;
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(`http://localhost:3001/ai/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({ prompt: userPrompt, imageBase64, modePrompt: systemPrompt })
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.response) return data.response;
+    }
+  } catch (e) {
+    console.log('[AI] Local backend unavailable:', e.message);
+  }
+
+  // 2. Try cloud backend (Render)
+  try {
+    const controller = new AbortController();
+    const timeoutMs = apiKey ? 8000 : 15000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(`${BACKEND_URL}/ai/ask`, {
       method: 'POST',
@@ -691,7 +706,7 @@ async function callAI(userPrompt, imageBase64 = null) {
     console.log('[AI] Cloud backend unavailable, trying direct BYOK:', e.message);
   }
 
-  // ── 2. Direct Gemini BYOK (no cold-start, instant) ─────────────────────────
+  // 3. Direct Gemini BYOK
   if (apiKey) {
     try {
       const fullPrompt = `${systemPrompt}\n\nUser Question: ${userPrompt}`;
@@ -701,7 +716,7 @@ async function callAI(userPrompt, imageBase64 = null) {
           inline_data: { mime_type: 'image/png', data: imageBase64.replace(/^data:image\/\w+;base64,/, '') }
         });
       }
-      const geminiModels = ['gemini-1.5-flash', 'gemini-2.0-flash-exp'];
+      const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
       for (const model of geminiModels) {
         const resp = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -717,7 +732,7 @@ async function callAI(userPrompt, imageBase64 = null) {
     }
   }
 
-  // ── 3. Groq BYOK fallback (llama-3.3-70b-versatile) ───────────────────────
+  // 4. Groq BYOK fallback (llama-3.3-70b-versatile)
   const groqKey = localStorage.getItem('GROQ_API_KEY');
   if (groqKey) {
     try {
@@ -741,7 +756,7 @@ async function callAI(userPrompt, imageBase64 = null) {
     }
   }
 
-  return '⚠️ All AI providers unavailable. Check your internet connection or add a Gemini API key in Settings.';
+  return 'All AI providers unavailable. Check your connection or enter a custom API key in Settings.';
 }
 
 // Dock Handlers
@@ -753,8 +768,8 @@ dockPromptInput?.addEventListener('keydown', async (e) => {
     const emptyCard = document.getElementById('emptyStateCard');
     if (emptyCard) emptyCard.style.display = 'none';
 
-    appendResponseCard('You', q, '#3b82f6');
-    const aiCard = appendResponseCard('Intruely AI', 'Thinking...', '#22c55e');
+    appendResponseCard('You', q, '#06b6d4');
+    const aiCard = appendResponseCard('Intruely AI', 'Thinking...', '#22d3ee');
 
     const res = await callAI(q);
     updateCardText(aiCard, res);
@@ -774,28 +789,30 @@ async function triggerScreenSnap() {
   const emptyCard = document.getElementById('emptyStateCard');
   if (emptyCard) emptyCard.style.display = 'none';
 
-  const aiCard = appendResponseCard('Intruely Vision', 'Analyzing screen snippet...', '#a855f7');
+  const aiCard = appendResponseCard('Intruely Vision', 'Analyzing screen snippet...', '#22d3ee');
   try {
-    const sources = await window.electronAPI.getScreenSources();
-    if (sources && sources.length > 0) {
+    const sources = await window.electronAPI?.getScreenSources();
+    if (sources && sources.length > 0 && sources[0].dataUrl) {
       const res = await callAI("Solve question shown on screen", sources[0].dataUrl);
       updateCardText(aiCard, res);
+    } else {
+      updateCardText(aiCard, 'Screen capture failed: No screen source detected.');
     }
   } catch (e) {
     updateCardText(aiCard, `Screen error: ${e.message}`);
   }
 }
 
-function appendResponseCard(author, text, color = '#22c55e') {
+function appendResponseCard(author, text, color = '#22d3ee') {
   const card = document.createElement('div');
-  card.style.background = 'var(--panel-dark)';
-  card.style.border = '1px solid var(--border-color)';
+  card.style.background = 'var(--glass-card)';
+  card.style.border = '1px solid var(--panel-border)';
   card.style.borderRadius = '10px';
   card.style.padding = '12px';
 
   card.innerHTML = `
     <div style="font-size:11px; color:${color}; font-weight:700; margin-bottom:6px;">${author.toUpperCase()}</div>
-    <div class="card-text" style="font-size:13px; line-height:1.5;">${text.replace(/\n/g, '<br>')}</div>
+    <div class="card-text">${formatMarkdown(text)}</div>
   `;
   if (aiResponseFeed) {
     aiResponseFeed.appendChild(card);
@@ -806,5 +823,5 @@ function appendResponseCard(author, text, color = '#22c55e') {
 
 function updateCardText(card, text) {
   const el = card.querySelector('.card-text');
-  if (el) el.innerHTML = text.replace(/\n/g, '<br>');
+  if (el) el.innerHTML = formatMarkdown(text);
 }

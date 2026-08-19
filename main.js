@@ -169,10 +169,11 @@ ipcMain.handle('get-screen-sources', async () => {
       types: ['screen'],
       thumbnailSize: { width: 1920, height: 1080 }
     });
+    if (!sources || sources.length === 0) return [];
     return sources.map(s => ({
       id: s.id,
       name: s.name,
-      dataUrl: s.thumbnail.toDataURL()
+      dataUrl: s.thumbnail ? s.thumbnail.toDataURL() : ''
     }));
   } catch (err) {
     console.error('Desktop capturer error:', err);
@@ -188,6 +189,7 @@ ipcMain.handle('get-audio-sources', async () => {
       thumbnailSize: { width: 0, height: 0 },
       fetchWindowIcons: false
     });
+    if (!sources || sources.length === 0) return [];
     return sources.map(s => ({ id: s.id, name: s.name }));
   } catch (err) {
     console.error('Audio sources error:', err);
@@ -208,11 +210,18 @@ ipcMain.handle('close-window', () => {
   if (mainWindow) mainWindow.close();
 });
 
-ipcMain.handle('parse-pdf', async (event, arrayBuffer) => {
+ipcMain.handle('parse-pdf', async (event, filePathOrBuffer) => {
   try {
-    const dataBuffer = Buffer.from(arrayBuffer);
+    let dataBuffer;
+    if (typeof filePathOrBuffer === 'string') {
+      dataBuffer = fs.readFileSync(filePathOrBuffer);
+    } else if (Buffer.isBuffer(filePathOrBuffer)) {
+      dataBuffer = filePathOrBuffer;
+    } else {
+      dataBuffer = Buffer.from(filePathOrBuffer);
+    }
     const data = await pdfParse(dataBuffer);
-    return data.text;
+    return data.text || '';
   } catch (err) {
     console.error('PDF parsing error:', err);
     throw err;

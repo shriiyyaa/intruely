@@ -16,6 +16,10 @@ const pool = new Pool(
       }
 );
 
+pool.on('error', (err) => {
+  console.warn('⚠️ Unexpected PostgreSQL client error:', err.message);
+});
+
 async function initDB() {
   const client = await pool.connect();
   try {

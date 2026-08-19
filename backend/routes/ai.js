@@ -19,6 +19,36 @@ function getApiKey() {
   return key;
 }
 
+const DEFAULT_SYSTEM_PROMPT = `You are Intruely AI, an elite real-time copilot engineered specifically for technical and behavioral interviews.
+
+Core Interview Execution Principles:
+1. STAR Method Enforcement: For behavioral or experience-based questions ("Tell me about a time...", "How did you handle...", "Walk me through..."), structure the response explicitly using the STAR framework:
+   - Situation: 1 sentence establishing concise context and business scope.
+   - Task: 1 sentence stating the specific problem or metric to solve.
+   - Action: 3-4 bullet points detailing your high-impact technical/leadership actions, decisions, and tools used.
+   - Result: 1 sentence highlighting quantifiable metrics (e.g. "% performance improvement", "$ saved", "0 downtime").
+
+2. Coding and Technical Algorithm Questions:
+   - Primary Languages: Code MUST be written in C++ (or Python).
+   - 3-Tier Multi-Approach Structure: Provide the complete progression that candidate should speak aloud to interviewer:
+     Approach 1: Brute Force:
+        - Verbal Explanation: 1-2 sentences of intuition to speak out loud.
+        - Logic/Complexity: Time: O(...) | Space: O(...)
+     Approach 2: Intermediate / Better:
+        - Verbal Explanation: 1-2 sentences explaining optimization idea (e.g. Hash Map / Two Pointers / Sorting).
+        - Complexity: Time: O(...) | Space: O(...)
+     Approach 3: Optimal Solution:
+        - Verbal Explanation: Concise intuition of the optimal pattern.
+        - Production Code: Clean, production-grade C++ (or Python) code solution with edge-case handling.
+        - Complexity: Time: O(...) | Space: O(...)
+
+3. Spoken Interview Verbatim Script:
+   - Include a short "What to Say to Interviewer:" section with exact natural phrases to speak out loud during the coding interview.
+
+4. Tone and Delivery:
+   - Speak in the first person ("I led", "I architected", "My approach is").
+   - Senior, authoritative, concise, and structured. No conversational fluff or meta-intros ("Sure!", "Here is an answer...").`;
+
 // POST /ai/ask — Proxy text & screen vision queries securely
 router.post('/ask', async (req, res) => {
   try {
@@ -34,42 +64,8 @@ router.post('/ask', async (req, res) => {
       return res.status(500).json({ error: `Backend AI API Key is missing. Found env keys: [${availableEnvKeys.join(', ')}]` });
     }
 
-    // Build systemic context prompt for elite real-time interview responses using STAR & structured frameworks
-    const systemContext = modePrompt || `You are Intruely AI, an elite real-time copilot engineered specifically for FAANG/tier-1 technical and behavioral interviews.
-
-Core Interview Execution Principles:
-1. STAR Method Enforcement: For behavioral or experience-based questions ("Tell me about a time...", "How did you handle...", "Walk me through..."), structure the response explicitly using the STAR framework:
-   • Situation: 1 sentence establishing concise context & business scope.
-   • Task: 1 sentence stating the specific problem or metric to solve.
-   • Action: 3-4 bullet points detailing your high-impact technical/leadership actions, decisions, and tools used.
-   • Result: 1 sentence highlighting quantifiable metrics (e.g. "% performance improvement", "$ saved", "0 downtime").
-
-2. Coding & Technical Algorithm Questions:
-   • Primary Languages: Code MUST be written in C++ (or Python).
-   • 3-Tier Multi-Approach Structure: Provide the complete progression that candidate should speak aloud to interviewer:
-     1️⃣ Approach 1 — Brute Force:
-        - Verbal Explanation: 1-2 sentences of intuition to speak out loud.
-        - Code/Logic: Minimal code snippet or logic outline.
-        - Complexity: Time: O(...) | Space: O(...)
-     2️⃣ Approach 2 — Better / Intermediate:
-        - Verbal Explanation: 1-2 sentences explaining optimization idea (e.g. Hash Map / Two Pointers / Sorting).
-        - Complexity: Time: O(...) | Space: O(...)
-     3️⃣ Approach 3 — Optimal Solution (FAANG Level):
-        - Verbal Explanation: Concise intuition of the optimal pattern.
-        - Production Code: Clean, production-grade C++ (or Python) code solution with edge-case handling.
-        - Complexity: Time: O(...) | Space: O(...)
-
-3. Spoken Interview Verbatim Script:
-   • Include a short 🗣️ "What to Say to Interviewer:" section with exact natural phrases to speak out loud during the coding interview.
-
-4. Tone & Delivery:
-   • Speak in the first person ("I led", "I architected", "My approach is").
-   • Senior, authoritative, concise, and structured. No conversational fluff or meta-intros ("Sure!", "Here is an answer...").`;
-
-    
+    const systemContext = modePrompt || DEFAULT_SYSTEM_PROMPT;
     const fullPrompt = `${systemContext}\n\nUser Question/Interview Prompt: ${prompt || 'Analyze the attached image and provide the immediate, STAR-formatted or optimal technical answer.'}`;
-
-
 
     let payload = {
       contents: [{
@@ -87,10 +83,10 @@ Core Interview Execution Principles:
     }
 
     // ── PROVIDER CHAIN ──────────────────────────────────────────────────────────
-    // 1. Gemini cascade (gemini-1.5-flash → gemini-2.0-flash-exp → gemini-1.5-pro)
+    // 1. Gemini cascade (gemini-2.0-flash → gemini-1.5-flash → gemini-1.5-pro)
     // 2. Groq llama3-70b-8192 (OpenAI-compatible) if all Gemini models fail
     // ────────────────────────────────────────────────────────────────────────────
-    const geminiModels = ['gemini-1.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-pro'];
+    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
     let aiResponseText = null;
     let lastError = null;
 
@@ -101,12 +97,13 @@ Core Interview Execution Principles:
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
           { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
         );
+        if (!response) break;
         const resData = await response.json();
-        if (resData.candidates?.[0]?.content?.parts?.[0]?.text) {
+        if (resData?.candidates?.[0]?.content?.parts?.[0]?.text) {
           aiResponseText = resData.candidates[0].content.parts[0].text;
           console.log(`[AI] Gemini (${model}) responded OK`);
           break;
-        } else if (resData.error) {
+        } else if (resData?.error) {
           lastError = resData.error.message;
           console.warn(`[AI] Gemini (${model}) error: ${lastError}`);
         }
@@ -121,7 +118,7 @@ Core Interview Execution Principles:
       const groqKey = process.env.GROQ_API_KEY;
       if (groqKey) {
         try {
-          console.log('[AI] Falling back to Groq llama3-70b-8192...');
+          console.log('[AI] Falling back to Groq llama3-70b-versatile...');
           const groqPayload = {
             model: 'llama-3.3-70b-versatile',
             messages: [
@@ -176,5 +173,93 @@ Core Interview Execution Principles:
   }
 });
 
+// POST /ai/stream — Stream chunk-by-chunk SSE responses
+router.post('/stream', async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  try {
+    const { prompt, imageBase64, modePrompt } = req.body;
+    const apiKey = getApiKey();
+
+    if (!apiKey) {
+      res.write(`data: ${JSON.stringify({ error: 'Backend Gemini API key missing.' })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      return res.end();
+    }
+
+    const systemContext = modePrompt || DEFAULT_SYSTEM_PROMPT;
+    const fullPrompt = `${systemContext}\n\nUser Question/Interview Prompt: ${prompt || 'Analyze the attached image and provide the immediate answer.'}`;
+
+    let payload = {
+      contents: [{ parts: [{ text: fullPrompt }] }]
+    };
+
+    if (imageBase64) {
+      payload.contents[0].parts.push({
+        inline_data: { mime_type: 'image/png', data: imageBase64.replace(/^data:image\/\w+;base64,/, '') }
+      });
+    }
+
+    const geminiResp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
+    );
+
+    if (geminiResp.ok && geminiResp.body) {
+      geminiResp.body.on('data', (chunk) => {
+        const text = chunk.toString();
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const json = JSON.parse(line.slice(6));
+              const partText = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (partText) {
+                res.write(`data: ${JSON.stringify({ text: partText })}\n\n`);
+              }
+            } catch (e) {
+              // Non-JSON SSE line or keepalive
+            }
+          }
+        }
+      });
+
+      geminiResp.body.on('end', () => {
+        res.write('data: [DONE]\n\n');
+        res.end();
+      });
+
+      geminiResp.body.on('error', (err) => {
+        console.error('Gemini Stream Error:', err);
+        res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
+      });
+    } else {
+      // Fallback to ask non-streaming if stream endpoint failed
+      const askResult = await fetch(`http://localhost:${process.env.PORT || 3001}/ai/ask`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, imageBase64, modePrompt })
+      });
+      const askJson = await askResult.json();
+      if (askJson.response) {
+        res.write(`data: ${JSON.stringify({ text: askJson.response })}\n\n`);
+      } else {
+        res.write(`data: ${JSON.stringify({ error: askJson.error || 'AI generation failed' })}\n\n`);
+      }
+      res.write('data: [DONE]\n\n');
+      res.end();
+    }
+  } catch (err) {
+    console.error('Stream Route Error:', err);
+    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    res.end();
+  }
+});
 
 module.exports = router;
+
